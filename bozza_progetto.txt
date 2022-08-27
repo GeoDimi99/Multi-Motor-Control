@@ -1,0 +1,37 @@
+1. Master --> Tutti: chiede agli slave di campionare (sample)
+
+2. for all slaves:
+	Master -->slave[i]-->Master:invia campionamento (get)
+
+3. for all slaves:
+	Master-->slave[i]:invia prossima configurazione (set)
+			  (lo slave aspetta ad applicarla)
+
+4. Master --> Tutti: applica configurazione (apply)
+
+Pacchetto TWI -->8 bit;
+
+INTERFACCIA APPLICAZIONE:
+
+VARIABILI:
+struct dc_motor_state{ 
+	uint_8 angular_position;
+	uint_8 angular_velocity;
+	uint_8 desired_velocity; 
+	uint_8 current_pwm;
+}; 
+
+METODI DEL CONTROLLORE:
+set_angular_velocity(angular_velocity); //immediatly after receiving apply() command
+
+METODI DI TWI:
+
+void sample(); master-->all
+
+struct dc_motor_state get_slave_status(int slave_number); master-->slave[i]-->master
+
+void set_slave_velocity(int slave_number,uint_8 desired_velocity); master-->slave[i]
+
+void apply(); master-->all
+
+

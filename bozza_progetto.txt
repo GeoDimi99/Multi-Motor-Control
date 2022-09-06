@@ -11,6 +11,54 @@
 
 Pacchetto TWI -->8 bit;
 
+
+INTERFACCIA CLIENT:
+
+
+Processo OUTPUT: 
+sem_t s; 
+
+int read_uart(int* velocity);
+
+int main(){
+	...
+	
+	int velocity;
+	while(1){
+		sem_wait(s);
+		if (!read_uart(&velocity)) printf(velocity); //sul modello del file grisetti
+		sem_post(s);
+	}
+	return 0;
+}
+	
+Processo INPUT:
+sem_t s; 
+
+int main(){
+	...
+	int velocity;
+	while(1){
+		if (scanf("%d", &velocity));
+		sem_wait(s);
+		if (write_uart(&velocity)) {perror("errore!");
+		sem_post(s);
+	}
+	return 0;
+}
+
+Processo SLAVE:
+struct ds_motor_state stato {0,0,0,0}
+
+int main(){
+	if (read_uart(&velocity)) perror("errore");
+	
+	
+	
+}
+
+
+
 INTERFACCIA APPLICAZIONE:
 
 VARIABILI:
@@ -24,6 +72,7 @@ struct dc_motor_state{
 METODI DEL CONTROLLORE:
 set_angular_velocity(angular_velocity); //immediatly after receiving apply() command
 
+
 METODI DI TWI:
 
 void sample(); master-->all
@@ -33,5 +82,4 @@ struct dc_motor_state get_slave_status(int slave_number); master-->slave[i]-->ma
 void set_slave_velocity(int slave_number,uint_8 desired_velocity); master-->slave[i]
 
 void apply(); master-->all
-
 

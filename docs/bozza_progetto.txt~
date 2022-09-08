@@ -15,14 +15,14 @@ Pacchetto TWI -->8 bit;
 INTERFACCIA CLIENT:
 
 
-Processo OUTPUT:
-sem_t s;
+Processo OUTPUT: 
+sem_t s; 
 
 int read_uart(int* velocity);
 
 int main(){
 	...
-
+	
 	int velocity;
 	while(1){
 		sem_wait(s);
@@ -31,9 +31,9 @@ int main(){
 	}
 	return 0;
 }
-
+	
 Processo INPUT:
-sem_t s;
+sem_t s; 
 
 int main(){
 	...
@@ -51,45 +51,10 @@ Processo SLAVE:
 struct ds_motor_state stato {0,0,0,0}
 
 int main(){
-    char* command;
-    int velocity;
-
-    while (1){
-        if (!receive(&command)){
-            perror("Errore");
-            return 0;
-        }
-
-        int c = command;
-
-        switch (c){
-
-            case 1:                                                       //SAMPLE
-                velocity= stato.angular_velocity;
-
-            case 2:                                                       //GET
-
-                if (!send(velocity)){
-                    perror("Errore");
-                    return 0;
-                }
-
-            case 3:                                                       //SET
-
-                if (!receive(&velocity){
-                    perror("Errore");
-                    return 0;
-                }
-
-                stato.desired_velocity= velocity;
-
-            case 4:                                                       //APPLY
-                set_angular_velocity(velocity);
-        }
-    }
-
-
-
+	if (read_uart(&velocity)) perror("errore");
+	
+	
+	
 }
 
 
@@ -97,12 +62,12 @@ int main(){
 INTERFACCIA APPLICAZIONE:
 
 VARIABILI:
-struct dc_motor_state{
+struct dc_motor_state{ 
 	uint_8 angular_position;
 	uint_8 angular_velocity;
-	uint_8 desired_velocity;
+	uint_8 desired_velocity; 
 	uint_8 current_pwm;
-};
+}; 
 
 METODI DEL CONTROLLORE:
 set_angular_velocity(angular_velocity); //immediatly after receiving apply() command

@@ -35,8 +35,6 @@ int main(int argc, char** argv) {
   ssize_t n_write=write(fd, buf, 3);
   n_write=write(fd, buf, 3);
   n_write=write(fd, buf, 3);
-  n_write=write(fd, buf, 3);
-  n_write=write(fd, buf, 3);
   close(fd);
   return 0;
 }

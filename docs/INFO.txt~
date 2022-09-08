@@ -1,4 +1,6 @@
-Path: /dev/ttyUSB0  (Georgi)
+Path: 
+	/dev/ttyUSB0  (Georgi)
+	/dev/ttyACM0  (Sara)
 banda: 19200
 
 

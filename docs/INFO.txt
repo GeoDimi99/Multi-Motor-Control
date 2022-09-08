@@ -3,6 +3,9 @@ Path:
 	/dev/ttyACM0  (Sara)
 banda: 19200
 
+link utili: 
+	https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/
+
 
 
 The termios functions describe a general terminal interface that is provided to control asynchronous communications ports.

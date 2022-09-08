@@ -1,0 +1,85 @@
+INFO GENERALI: 
+
+pacchetti dati: 9 bit
+	-8 bit di dati
+	-1 bit ACK (linea bassa per ACK, linea alta per NACK)
+
+pacchetti con un indirizzo: 9 bit
+	-7 bit per l'indirizzo
+	-1 bit per  specificare la modalità (0 se lo slave dovrà ricevere dati, 1 se lo slave dovrà inviare dati sul bus)
+	-1 bit di ACK (la linea dovà essere abbassata DALLO SLAVE per dare conferma del fatto che ha riconosciuto l'indirizzo ed è in ascolto sulla linea)
+
+Registri TWI: 
+	- TWBR (TWI Bit Rate Register)--> per impostare la frequenza di clock
+	- TWSR (TWI Status Register)--> contiene lo stato dell'hardware TWI 
+	- TWCR (TWI Control Register)--> utilizzato per controllare il TWI (abilitare interruzioni etc...)
+	- TWDR (TWI Data Register) --> shift register per inviare e ricevere i dati
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+MASTER:
+	1. Vuole trasmettere --> invia la condizione di START, cioè esegue un passaggio della linea dei dati (SDA) da alto a basso quando la linea del clock (SCL) è alta
+	2. La condizione di START viene rilevata e gli slave si mettono in ascolto sul bus per l'indirizzo
+	3. se uno slave riconosce il suo indirizzo (o broadcast) manda un ACK durante il periodo del 9 bit e si mette in ascolto sulla linea, secondo la modalità dichiarata
+	   dal master nel pacchetto indirizzo
+	4. Vuole terminare la trasmissione--> invia una condizione di STOP, ovvero esegue un passaggio della linea dati da basso ad alto
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+STRUTTURA DATI PER TWI:
+
+typedef enum{
+	Ready,                          //deve essere lo stato del TWI prima dell'inizio della trasmissione
+	Initializing, 
+	Repeated_Start,                 //siamo sicuri che serva?
+	Master_Trasmitter,              //il master invia dati allo slave
+	Master_Receiver,                //il master riceve dati dallo slave
+	Slave_Transmitter,              //lo slave trasmette dati al master
+	Slave_Receiver                  //lo slave riceve dati dal master
+}TWI_mode
+
+typedef struct TWI_info{
+	TWI_mode mode;
+	uint8_t error_code;             //0xFF se va tutto bene (o un altro valore?) 
+	uint8_t repeated_start;
+}TWI_info;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INIZIALIZZAZIONE TWI: 
+	1. Impostare la frequenza del clock (TWBR)
+	2. Abilitare il modulo TWI e le interruzioni (TWCR) 
+
+Inoltre si dichiara un buffer di trasmissione ed un buffer di ricezione 
+
+E' comodo definire delle macro per controllare l'hardware TWI e settare in maniera appropriata il registro TWCR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

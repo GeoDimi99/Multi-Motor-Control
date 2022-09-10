@@ -47,25 +47,43 @@ uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeate
 	return 0;
 }
 
+uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start){
+	// Check if number of bytes to read can fit in the RXbuffer
+	if (bytes_to_read < RECEIVE_BUFLEN){
+		// Reset buffer index and set RXBuffLen to the number of bytes to read
+		RB_Index = 0;
+		receive_len = bytes_to_read;
+		// Create the one value array for the address to be transmitted
+		uint8_t TXdata[1];
+		// Shift the address and AND a 1 into the read write bit (set to write mode)
+		TXdata[0] = (TWIaddr << 1) | 0x01;
+		// Use the TWITransmitData function to initialize the transfer and address the slave
+		TWITransmitData(TXdata, 1, repStart);
+	}
+	else
+	{
+		return 0;
+	}
+	return 1;
+}
+
 ISR (TWI_vect)
 {
 	switch (TWI_STATUS)
 	{
 		// ----\/ ---- MASTER TRANSMITTER OR WRITING ADDRESS ----\/ ----  //
 		
-		case TWI_MT_SLAW_ACK:                                        //è stato trasmesso l'indirizzo dello slave+ il bit W, si è ricevuto l'ACK              
+		case TWI_MT_SLAW_ACK:                                       //è stato trasmesso l'indirizzo dello slave+ il bit W, si è ricevuto l'ACK              
 			TWI_info.mode = Master_Transmitter;                     //setta la modalità: Master_Trasmitter
-			//TWI_Send_Start() *****da inserire???????****
-		case TWI_START_SENT:   //*****siamo sicuri che non vada messa al primo posto???*****  //è stata inviata una condizione di start              
-		case TWI_MT_DATA_ACK:                                      // un byte è stato trasmesso, si è ricevuto l'ACK
-			if (TB_Index < transmit_len){                            // se ci sono altri byte da inviare, si predismpone per farlo
+			
+		case TWI_START_SENT:                                        //è stata inviata una condizione di start              
+		case TWI_MT_DATA_ACK:                                       //un byte è stato trasmesso, si è ricevuto l'ACK
+			if (TB_Index < transmit_len){                           // se ci sono altri byte da inviare, si predismpone per farlo
 				TWDR = Transmit_Buffer[TB_Index++];                 // carica il dato nel buffer
 				TWI_Send_Transmit();                                // invia il dato
 			}
-			// This transmission is complete however do not release bus yet
 			else if (TWI_info.repeated_start){                       //se tutti i byte sono stati inviati e si vuole eseguire una repeated start
 				TWI_info.error_code = TWI_SUCCESS;                    //dichiara il successo della trasmissione
-				//TWI_info.mode= Repeated_Start; *****da inserire???????****
 				TWI_Send_Start();
 			}
 			else{                                                    //altrimenti si vuole concludere la trasmissione
@@ -79,13 +97,13 @@ ISR (TWI_vect)
 		
 		case TWI_MR_SLAR_ACK:                                         //è stato trasmesso l'indirizzo dello slave+ il bit R, si è ricevuto l'ACK
 				TWI_info.mode = Master_Receiver;                      //setta la modalità: Master receiver
-			if (RB_Index < receive_len-1){                           // se è rimasto più di un byte da leggere 
+			if (RB_Index < receive_len-1){                            // se è rimasto più di un byte da leggere 
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;      
-				TWI_Send_ACK();                                      //invia un ACK
+				TWI_Send_ACK();                                       //invia un ACK
 			}
 			else{                                                     //se è stato ricevuto uno ed un solo byte
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;          
-				TWI_Send_NACK();                                      //*******perché??????******
+				TWI_Send_NACK();                                    
 			}
 			break;
 		
@@ -99,7 +117,7 @@ ISR (TWI_vect)
 			}
 			else{                                                     //altrimenti se è stato ricevuto uno ed un solo byte
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
-				TWI_Send_NACK();                                      //*******perché??????******
+				TWI_Send_NACK();                                      
 			}
 			break;
 		
@@ -118,27 +136,25 @@ ISR (TWI_vect)
 			}
 			break;
 		
-		// ----\/ ---- MT and MR common ----\/ ---- //
+		// ----\/ ---- MASTER TRASMIT AND MASTER RECEIVE COMMON ----\/ ---- //
 		
-		case TWI_MR_SLAR_NACK:                                      // SLA+R transmitted, NACK received
-		case TWI_MT_SLAW_NACK:                                      // SLA+W transmitted, NACK received
-		case TWI_MT_DATA_NACK:                                      // Data byte has been transmitted, NACK received
-		case TWI_LOST_ARBIT:                                        // Arbitration has been lost
-			// Return error and send stop and set mode to ready
-			if (TWI_info.repeated_start){				
-				TWI_info.error_code = TWI_STATUS;
-				TWI_Send_Start();
+		case TWI_MR_SLAR_NACK:                                      // slave address + R trasmesso, ricevuto un NACK
+		case TWI_MT_SLAW_NACK:                                      // slave address + W trasmesso, ricevuto un NACK
+		case TWI_MT_DATA_NACK:                                      // è stato trasmesso un data byte, ed è stato ricevuto un NACK
+		
+		case TWI_LOST_ARBIT:                                        // si è perso il controllo 
+			if (TWI_info.repeated_start){				            //se si è perso il controllo nel mezzo di una repeated start
+				TWI_info.error_code = TWI_STATUS;                   //l'errore corrisponde allo stato di TWI
+				TWI_Send_Start();                                   //ritento la trasmissione
 			}
-			// All transmissions are complete, exit
 			else{
-				TWI_info.mode = Ready;
+				TWI_info.mode = Ready;                               
 				TWI_info.error_code = TWI_STATUS;
 				TWI_Send_Stop();
 			}
 			break;
-		case TWI_REP_START_SENT: // Repeated start has been transmitted
-			// Set the mode but DO NOT clear TWINT as the next data is not yet ready
-			TWI_info.mode = Repeated_Start;
+		case TWI_REP_START_SENT:                                    // è stata trasmessa una repeated start
+			TWI_info.mode = Repeated_Start;                         //imposta la modalià repeated start ma non si pulisce TWINT poiché il prossimo dato non è ancora pronto
 			break;
 		
 		// ----\/ ---- SLAVE RECEIVER ----\/ ----  //
@@ -150,13 +166,11 @@ ISR (TWI_vect)
 		// TODO  IMPLEMENT SLAVE TRANSMITTER FUNCTIONALITY
 		
 		// ----\/ ---- MISCELLANEOUS STATES ----\/ ----  //
-		case TWI_NO_RELEVANT_INFO: // It is not really possible to get into this ISR on this condition
-								   // Rather, it is there to be manually set between operations
+		case TWI_NO_RELEVANT_INFO:                                  //in realtà non è possibile accedere a questo inerrupt handler, è qui solo per essere impostato maualmente tra le operazioni
 			break;
-		case TWI_ILLEGAL_START_STOP: // Illegal START/STOP, abort and return error
-			TWI_info.error_code = TWI_ILLEGAL_START_STOP;
-			TWI_info.mode = Ready;
-			TWI_Send_Stop();
+		case TWI_ILLEGAL_START_STOP:                                // è stata inviata una condizione di start/stop illegale
+			TWI_info.mode = Ready;                                  //TWI ritorna ready
+			TWI_Send_Stop();                                        //ivia la condizione di stop
 			break;
 	}
 	

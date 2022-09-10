@@ -105,6 +105,12 @@ typedef struct TWI_info{
  *  [0] TWIE=1 abilita le interruzioni e la loro gestione passando per l'interrupt vector
 */
 
+//Definizione dei codici di errore
+#define TWI_LOST_ARBIT			0x38     // Il controllo di TWI è stato perso
+#define TWI_NO_RELEVANT_INFO	0xF8     // Non ci sono informazioni rilevanti
+#define TWI_ILLEGAL_START_STOP	0x00     // Rilevata condizione di START/STOP illegale
+#define TWI_SUCCESS				0xFF     // Trasferimento avvenuto con successo
+
 //dichiarazione delle funzioni
 uint8_t is_TWI_ready(void);
 void TWI_Init(void);

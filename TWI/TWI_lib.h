@@ -111,6 +111,34 @@ typedef struct TWI_info{
 #define TWI_ILLEGAL_START_STOP	0x00     // Rilevata condizione di START/STOP illegale
 #define TWI_SUCCESS				0xFF     // Trasferimento avvenuto con successo
 
+//TWI STATUS CODE PER ISR
+#define TWI_START_SENT			0x08 	// Inviata condizione di start 
+#define TWI_REP_START_SENT		0x10 	// Inviata repeated start
+
+//master trasmitter
+#define TWI_MT_SLAW_ACK			0x18 	// Inviato indirizzo dello slave + W bit, ricevuto un ACK
+#define TWI_MT_SLAW_NACK		0x20 	// Inviato indirizzo dello slave + W bit, ricevuto un NACK
+#define TWI_MT_DATA_ACK			0x28 	// Inviato un dato e ricevuto un ACK
+#define TWI_MT_DATA_NACK		0x30 	// Inviato un dato e ricevuto un NACK 
+
+//master receiver
+#define TWI_MR_SLAR_ACK			0x40	// Inviato indirizzo dello slave + R bit, ricevuto un ACK
+#define TWI_MR_SLAR_NACK		0x48 	// Inviato indirizzo dello slave + R bit, ricevuto un NACK
+#define TWI_MR_DATA_ACK			0x50 	// Ricevuto un dato, invio un ACK
+#define TWI_MR_DATA_NACK		0x58 	// NON ricevuto un dato, invio un NACK
+
+//slave trasmitter
+#define TWI_ST_SLAW_ACK			0x18 	// Ricevuto indirizzo dello slave + W bit, invio un ACK
+#define TWI_ST_SLAW_NACK		0x20 	// NON icevuto indirizzo dello slave + W bit, invio un NACK
+#define TWI_ST_DATA_ACK			0x28 	// Inviato un dato e ricevuto un ACK
+#define TWI_ST_DATA_NACK		0x30 	// Inviato un dato e ricevuto un NACK 
+
+//slave receiver
+#define TWI_MT_SLAW_ACK			0x18 	// Ricevuto indirizzo dello slave + R bit, invioun ACK
+#define TWI_MT_SLAW_NACK		0x20 	// NON icevuto indirizzo dello slave + R bit, invio un NACK
+#define TWI_MT_DATA_ACK			0x28 	// Ricevuto un dato, invio un ACK
+#define TWI_MT_DATA_NACK		0x30 	// NON ricevuto un dato, invio un NACK 
+
 //dichiarazione delle funzioni
 uint8_t is_TWI_ready(void);
 void TWI_Init(void);

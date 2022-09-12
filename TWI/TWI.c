@@ -48,23 +48,15 @@ uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeate
 }
 
 uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start){
-	// Check if number of bytes to read can fit in the RXbuffer
 	if (bytes_to_read < RECEIVE_BUFLEN){
-		// Reset buffer index and set RXBuffLen to the number of bytes to read
-		RB_Index = 0;
-		receive_len = bytes_to_read;
-		// Create the one value array for the address to be transmitted
-		uint8_t TXdata[1];
-		// Shift the address and AND a 1 into the read write bit (set to write mode)
-		TXdata[0] = (TWIaddr << 1) | 0x01;
-		// Use the TWITransmitData function to initialize the transfer and address the slave
-		TWITransmitData(TXdata, 1, repStart);
+		RB_Index = 0;                                                          //imposta indice lettura a 0
+		receive_len = bytes_to_read;                                           //imposta lunghezza della stringa uguale ai bytes da leggere
+		uint8_t TR_data[1];                                                    //qui si insersce l'indirizzo di trasmissione 
+		TR_data[0] = (TWI_addr << 1) | 0x01;                                   //in TWI data si inserisce l'indirizzo + write bit
+		TWI_Transmit_Data(TR_data, 1, repeated_start);                         //inizializza il trasferimento ed indirizza lo slave
 	}
-	else
-	{
-		return 0;
-	}
-	return 1;
+	else return 1;
+	return 0;
 }
 
 ISR (TWI_vect)

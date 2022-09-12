@@ -134,7 +134,7 @@ ISR (TWI_vect)
 		case TWI_MT_SLAW_NACK:                                      // slave address + W trasmesso, ricevuto un NACK
 		case TWI_MT_DATA_NACK:                                      // è stato trasmesso un data byte, ed è stato ricevuto un NACK
 		
-		case TWI_LOST_ARBIT:                                        // si è perso il controllo 
+		case TWI_M_LOST_ARBIT:                                        // si è perso il controllo 
 			if (TWI_info.repeated_start){				            //se si è perso il controllo nel mezzo di una repeated start
 				TWI_info.error_code = TWI_STATUS;                   //l'errore corrisponde allo stato di TWI
 				TWI_Send_Start();                                   //ritento la trasmissione

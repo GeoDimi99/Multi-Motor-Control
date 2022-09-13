@@ -134,7 +134,7 @@ ISR (TWI_vect)
 		case TWI_MT_SLAW_NACK:                                      // slave address + W trasmesso, ricevuto un NACK
 		case TWI_MT_DATA_NACK:                                      // è stato trasmesso un data byte, ed è stato ricevuto un NACK
 		
-		case TWI_M_LOST_ARBIT:                                        // si è perso il controllo 
+		case TWI_M_LOST_ARBIT:                                      // si è perso il controllo 
 			if (TWI_info.repeated_start){				            //se si è perso il controllo nel mezzo di una repeated start
 				TWI_info.error_code = TWI_STATUS;                   //l'errore corrisponde allo stato di TWI
 				TWI_Send_Start();                                   //ritento la trasmissione
@@ -149,15 +149,69 @@ ISR (TWI_vect)
 			TWI_info.mode = Repeated_Start;                         //imposta la modalià repeated start ma non si pulisce TWINT poiché il prossimo dato non è ancora pronto
 			break;
 		
-		// ----\/ ---- SLAVE RECEIVER ----\/ ----  //
+		// ----\/ ---- SLAVE RECEIVER ----\/ ----  //              
 		
-		// TODO  IMPLEMENT SLAVE RECEIVER FUNCTIONALITY
+		case TWI_SR_BRAW_ACK:
+		case TWI_SR_SLAW_ACK:
+			TWI_info.mode= Slave_Reciever;
+			if (RB_Index < receive_len){                            // se è rimasto un byte da leggere 
+				TWI_info.error_code = TWI_NO_RELEVANT_INFO;      
+				TWI_Send_ACK();                                       //invia un ACK
+			}
+			else{                                                     //se è stato ricevuto uno ed un solo byte
+				TWI_info.error_code = TWI_NO_RELEVANT_INFO;          
+				TWI_Send_NACK();                                    
+			}
+			break;
+			
+		case TWI_SR_BR_DATA_ACK:
+		case TWI_SR_DATA_ACK:			
+			Receive_Buffer[RB_Index++] = TWDR;
+			if (RB_Index < receive_len){                            //se c'è un byte da leggere, ricevi il byte e manda l'ACK
+				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
+				TWI_Send_ACK();
+			}
+			else{                                                     //altrimenti se è stato ricevuto uno ed un solo byte
+				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
+				TWI_Send_NACK();                                      
+			}
+			break;
+		
+		case TWI_SR_BR_DATA_NACK:
+		case TWI_SR_DATA_NACK:
+			/// -- HANDLE DATA BYTE --- ///
+			Receive_Buffer[RB_Index++] = TWDR;	
+			if (TWI_info.repeated_start){                             //verifico se avverrà un'ulteriore trasmissione
+				TWI_info.error_code = TWI_SUCCESS;
+				TWI_Send_Start();
+			}
+			else{
+				TWI_info.mode = Ready;                                //dichiaro che TWI è pronto
+				TWI_info.error_code = TWI_SUCCESS;                    //dichiaro che è avvenuto 
+				TWI_Send_Stop();
+			}
+			break;
+			
+		case TWI_SR_R_START_STOP:
+			TWI_Send_NACK();
+			break;
+			
 		
 		// ----\/ ---- SLAVE TRANSMITTER ----\/ ----  //
 		
 		// TODO  IMPLEMENT SLAVE TRANSMITTER FUNCTIONALITY
 		
+		
+		// -----\/----SLAVE RECEIVER AND SLAVE TRANSMITTER COMMON ----\/----//
+		
+		case TWI_ST_LOST_ARBIT:
+		case TWI_SR_LOST_ARBIT:
+		case TWI_SR_BR_LOST_ARBIT:
+			TWI_Send_NACK();
+			break;
+		
 		// ----\/ ---- MISCELLANEOUS STATES ----\/ ----  //
+		case TWI_SUCCESS:
 		case TWI_NO_RELEVANT_INFO:                                  //in realtà non è possibile accedere a questo inerrupt handler, è qui solo per essere impostato maualmente tra le operazioni
 			break;
 		case TWI_ILLEGAL_START_STOP:                                // è stata inviata una condizione di start/stop illegale

@@ -9,8 +9,8 @@
 #define RECEIVE_BUFLEN 20
 uint8_t Transmit_Buffer[TRANSMIT_BUFLEN];
 volatile uint8_t Receive_Buffer[RECEIVE_BUFLEN];     //volatile-->può cambiare ad ogni istante
-volatile int TB_Index;                               //indicizza il buffer di trasmissione--> può cambiare ad ogni istante
-int RB_Index;                                        //indicizza il buffer di ricezione
+volatile int TB_Index;                             //indicizza il buffer di trasmissione--> può cambiare ad ogni istante
+int RB_Index;                                      //indicizza il buffer di ricezione
 int transmit_len;                                    //Lunghezza della trasmissione (minore di TRANSMIT_BUFLEN)
 int receive_len;                                     //Lunghezza della ricezione (minore di RECEIVE_BUFLEN)
 
@@ -22,7 +22,7 @@ typedef enum {
 	Master_Transmitter,
 	Master_Receiver,
 	Slave_Transmitter,
-	Slave_Reciever
+	Slave_Receiver
 } TWI_mode;
 
 //struttura dati info TWI
@@ -36,6 +36,19 @@ typedef struct TWI_info_struct{
 TWI_info_struct TWI_info;
 
 //macros per il controllo
+#define TWI_Set_Address() (TWCR= (0<<TWINT)|(1<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|(0<<TWWC)|(1<<TWEN)|(1<<TWIE))
+
+/*
+ * TWI_Set_Address() [TWCR=01000101]:
+ *  [7] TWINT=0 NON si è finito di lavorare in background e NON ci si aspetta un'interrupt
+ *  [6] TWEA=1 abilitato il controllo per l'ACK
+ *  [5] TWSTA=0 NON si vuole trasmettere una condizione di START
+ *  [4] TWSTO=0 NON si vuole trasmettere una condizione di STOP
+ *  [3] TWWC=0 non è avvenuto un tentativo illegale di scrittura (write collision)
+ *  [2] TWEN=1 abilita TWI, che prende il controllo dei pins SCL ed SDA
+ *  [1] 0 bit inutilizzato
+ *  [0] TWIE=1 abilita le interruzioni e la loro gestione passando per l'interrupt vector
+*/
 
 #define TWI_Send_Start() (TWCR = (1<<TWINT)|(0<<TWEA)|(1<<TWSTA)|(0<<TWSTO)|(0<<TWWC)|(1<<TWEN)|(1<<TWIE))
 
@@ -107,53 +120,56 @@ TWI_info_struct TWI_info;
  *  [0] TWIE=1 abilita le interruzioni e la loro gestione passando per l'interrupt vector
 */
 
-//Definizione dei codici di errore
-#define TWI_M_LOST_ARBIT		0x38     // Il controllo di TWI è stato perso in SLA+W/R oppure nella trasmissione dei dati
-#define TWI_SR_LOST_ARBIT       0x68     // Il controllo di TWI è stato perso dal master in SLA+W/R; ricevuto SLA+W, inviato un ACK
-#define TWI_SR_BR_LOST_ARBIT    0x78     // Il controllo di TWI è stato perso dal master in SLA+W/R; ricevuto indirizzo broadcast +W, inviato un ACK
-#define TWI_ST_LOST_ARBIT       0xB0     // Il controllo di TWI è stato perso dal master in SLA+W/R; ricevuto SLA+R, inviato un ACK
-#define TWI_NO_RELEVANT_INFO	0xF8     // Non ci sono informazioni rilevanti
-#define TWI_ILLEGAL_START_STOP	0x00     // Rilevata condizione di START/STOP illegale
-#define TWI_SUCCESS				0xFF     // Trasferimento avvenuto con successo
+//Definizione status code
+#define TWI_SUCCESS                  0xFF                //trasmissione avvenuta con successo
+#define TWI_NO_RELEVANT_INFO         0xF8                //non ci sono informazioni rilevanti
+#define TWI_ILLEGAL_START_STOP       0x00                //condizione di START/STOP ricevuta illegalmente
 
-//TWI STATUS CODE PER ISR
-#define TWI_START_SENT			0x08 	// Inviata condizione di start 
-#define TWI_REP_START_SENT		0x10 	// Inviata repeated start
+//MASTER TRASMITTER AND MASTER RECEIVER COMMON//
 
-//master trasmitter
-#define TWI_MT_SLAW_ACK			0x18 	// Inviato indirizzo dello slave + W bit, ricevuto un ACK
-#define TWI_MT_SLAW_NACK		0x20 	// Inviato indirizzo dello slave + W bit, ricevuto un NACK
-#define TWI_MT_DATA_ACK			0x28 	// Inviato un dato e ricevuto un ACK
-#define TWI_MT_DATA_NACK		0x30 	// Inviato un dato e ricevuto un NACK 
+#define START_TRANSMITTED            0x08                //è stata trasmessa unacondizione di START
+#define REP_START_TRANSMITTED        0x10                //è stata trasmessa una REPEATED START
+#define ARBITRATION_LOST             0x38                //arbitrato perso nel SLA+W o nell'invio di un dato (se MT)
+														 //arbitrato perso nel SLA+R o nell'invio del NACK   (se MR)
 
-//master receiver
-#define TWI_MR_SLAR_ACK			0x40	// Inviato indirizzo dello slave + R bit, ricevuto un ACK
-#define TWI_MR_SLAR_NACK		0x48 	// Inviato indirizzo dello slave + R bit, ricevuto un NACK
-#define TWI_MR_DATA_ACK			0x50 	// Ricevuto un dato e inviato un ACK
-#define TWI_MR_DATA_NACK		0x58 	// Ricevuto un dato e inviato un NACK
+//MASTER TRANSMITTER//
+#define SLAW_TR_ACK_RV               0x18                //SLA+W è stato trasmesso, si è ricevuto un ACK  
+#define SLAW_TR_NACK_RV              0X20                //SLA+W è stato trasmesso, si è ricevuto un NACK 
+#define M_DATA_TR_ACK_RV             0x28                //un dato è stato trasmesso, si è ricevuto un ACK 
+#define M_DATA_TR_NACK_RV            0x30                //un dato è stato trasmesso, si è ricevuto un NACK 
 
-//slave trasmitter
-#define TWI_ST_SLAW_ACK			0xA8 	// Ricevuto indirizzo dello slave + R bit, inviato un ACK
-#define TWI_ST_SLAW_NACK		0x20 	// NON icevuto indirizzo dello slave + W bit, invio un NACK
-#define TWI_ST_DATA_ACK			0xB8 	// Inviato un dato e ricevuto un ACK
-#define TWI_ST_DATA_NACK		0xC0 	// Inviato un dato e ricevuto un NACK 
-#define TWI_ST_LAST_DATA_ACK	0xC8 	// Inviato l'ultimo dato e ricevuto un ACK
+//MASTER RECEIVER//
+#define SLAR_TR_ACK_RV               0x40                //SLA+R è stato trasmesso, si è ricevuto un ACK 
+#define SLAR_TR_NACK_RV              0x48                //SLA+R è stato trasmesso, si è ricevuto un NACK 
+#define DATA_RV_ACK_TR               0x50                //si è ricevuto un dato, è stato trasmesso un ACK
+#define DATA_RV_NACK_TR              0x58                //si è ricevuto un dato, è stato trasmesso un NACK
 
-//slave receiver
-#define TWI_SR_SLAW_ACK			0x60 	// Ricevuto indirizzo dello slave + W bit, inviato un ACK
-#define TWI_SR_BRAW_ACK			0x70 	// Ricevuto indirizzo broadcast + W bit, inviato un ACK
-#define TWI_SR_DATA_ACK			0x80 	// Ricevuto un dato, precedentemente ricevuto SLA+W, inviato un ACK
-#define TWI_SR_BR_DATA_ACK		0x90 	// Ricevuto un dato, precedentemente ricevuto indirizzo broadcast, inviato un ACK
-#define TWI_SR_DATA_NACK		0x88 	// Ricevuto un dato, precedentemente ricevuto SLA+W, inviato un NACK
-#define TWI_SR_BR_DATA_NACK		0x98 	// Ricevuto un dato, precedentemente ricevuto indirizzo broadcast, inviato un NACK
-#define TWI_SR_R_START_STOP		0xA0 	// Uno stop o una repeated start è stata ricevuta mentre è ancora indirizzato come slave
 
+//SLAVE RECEIVER//
+#define SLAW_RV_ACK_TR               0x60                //si è ricevuto il proprio SLA + W, è stato trasmesso un ACK
+#define BRDW_RV_ACK_TR               0x70                //si è ricevuto l'indirizzo broadcast, è stato trsamesso un ACK
+#define DATA_SLA_RV_ACK_TR           0x80                //si è ricevuto un dato, precendentemente indirizzato con SLA, è stato trasmesso un ACK
+#define DATA_SLA_RV_NACK_TR          0x88                //si è ricevuto un dato, precendentemente indirizzato con SLA, è stato trasmesso un NACK
+#define DATA_BRD_RV_ACK_TR           0x90                //si è ricevuto un dato in broadcast, è stato trasmesso un ACK
+#define DATA_BRD_RV_NACK_TR          0x98                //si è ricevuto un dato in broadcast, è stato trasmesso un NACK
+#define START_STOP_FOR_SLAVE         0xA0                //si è ricevuta una condizione di STOP o di REPEATED START come slave
+#define ARBITRATION_LOST_SR_ADDR     0x68                //il master ha perso l'arbitrato, precendentemente indirizzato con SLA
+#define ARBITRATION_LOST_SR_BRD      0x78                //il master ha perso l'arbitrato, precendentemente indirizzato con broadcast
+
+//SLAVE TRANSMITTER//
+#define SLAR_RV_ACK_TR               0xA8                //si è ricevuto il proprio SLA + R, è stato trsamsesso un ACK
+#define S_DATA_TR_ACK_RV             0xB8                //un dato è stato trasmesso, si è ricevuto un ACK
+#define S_DATA_TR_NACK_RV            0xC0                //un dato è stato trasmesso, si è ricevuto un NACK
+#define ARBITRATION_LOST_ST          0xB0                //il master ha perso l'arbitrato
+#define S_LDATA_TR_ACK_RV            0xC8                //l'ultimo dato è stato trasmesso,si è ricevuto un ACK
 
 //dichiarazione delle funzioni
 uint8_t is_TWI_ready(void);
 void TWI_Init(void);
+void Slave_Addr_init(uint8_t addr, uint8_t brd);
 uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeated_start);
 uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start);
+uint8_t Slave_Receiver_Read_Data(uint8_t SLAW_addr, uint8_t bytes_to_read, uint8_t repeated_start);
 
 #endif
 

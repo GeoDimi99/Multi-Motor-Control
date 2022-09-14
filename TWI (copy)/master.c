@@ -10,11 +10,17 @@ int main(void){
 	printf_init();
 	sei();                                      //abilita le interruzioni globali
 	TWI_Init();                                 //inizializza TWI
-	uint8_t data[] = "Hello";
-	uint8_t data_len = sizeof(data)/sizeof(data[0]);
+	Slave_Addr_init(0x01, 1);
+	uint8_t data[7]; 
+	data[0]= 0x00;
+	data[1]='H';
+	data[2]='e';
+	data[3]='1';
+	data[4]='l';
+	data[5]='o';
+	data[6]='\n';
 	TWI_info.error_code = TWI_NO_RELEVANT_INFO;
-	TWI_Transmit_Data((void*)data, data_len, 0);
+	TWI_Transmit_Data((void*)data, 7, 0);
 	_delay_ms(1000);
-	printf("char : %s\n",(char*)Transmit_Buffer);
 	return 0;
 }

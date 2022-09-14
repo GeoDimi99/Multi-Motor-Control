@@ -1,7 +1,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "TWIlib.h"
+#include "TWI_lib.h"
 #include "util/delay.h"
+#include <stdio.h>
+#include "../avr_common/uart.h"
 
 void TWI_Init()
 {
@@ -20,44 +22,48 @@ uint8_t is_TWI_ready(){
 
 uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeated_start){
 	if (data_len <= TRANSMIT_BUFLEN){
-		while (!is_TWI_ready()) {_delay_us(1);}       //aspetta finché TWI non è pronto
-		TWI_info.repeated_start = repeated_start;     //imposta se la trasmissione sta avvenendo a seguito di una repeated start
-		uint8_t* data = (uint8_t*)TR_data;            
+		while (!is_TWI_ready()) {_delay_us(1);}
+		TWI_info.repeated_start = repeated_start;
+		uint8_t *data = (uint8_t *)TR_data;
 		for (int i = 0; i < data_len; i++){
-			Transmit_Buffer[i] = data[i];             //copia i dati nel buffer di trasmissione
+			Transmit_Buffer[i] = data[i];
 		}
-		transmit_len = data_len;                      //dichiara la lunghezza dei dati da trasmettere
-		TB_Index = 0;                                 //inizializza index del buffer di trasmissione
-		
-		if (TWI_info.mode == Repeated_Start){         //se la trasmissione avviene con repeated start non è necessario inviare la condizione di start
+		transmit_len = data_len;
+		TB_Index = 0;
+		 
+		if (TWI_info.mode == Repeated_Start){
 			TWI_info.mode = Initializing;
-			TWDR = Transmit_Buffer[TB_Index++];       //inserisce il dato da trasmettere nel data register
-			TWI_Send_Transmit();                      // Invia il dato
+			TWDR = Transmit_Buffer[TB_Index++]; 
+			TWI_Send_Transmit(); 
 		}
-		else{                                         //se la trasmissione avviene per la prima volta, si manda la condizione di start
+		else{
 			TWI_info.mode = Initializing;
 			TWI_Send_Start();
+			while (TWI_info.error_code!=TWI_SUCCESS){
+				TWDR = Transmit_Buffer[TB_Index++];         
+				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
+				TWI_Send_Transmit();
+			}                             
+			
 		}
 		
 	}
-	else{ 
-		perror("Error: data_len must be <= TRANSMIT_BUFLEN");
-		return 1; 
-	}
+	else{ return 1; }
 	return 0;
 }
 
 uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start){
 	if (bytes_to_read < RECEIVE_BUFLEN){
-		RB_Index = 0;                                                          //imposta indice lettura a 0
-		receive_len = bytes_to_read;                                           //imposta lunghezza della stringa uguale ai bytes da leggere
-		uint8_t TR_data[1];                                                    //qui si insersce l'indirizzo di trasmissione 
-		TR_data[0] = (TWI_addr << 1) | 0x01;                                   //in TWI data si inserisce l'indirizzo + write bit
-		TWI_Transmit_Data(TR_data, 1, repeated_start);                         //inizializza il trasferimento ed indirizza lo slave
+		RB_Index = 0;
+		receive_len = bytes_to_read;
+		uint8_t TR_data[1];
+		TR_data[0] = (TWI_addr << 1) | 0x01;
+		TWI_Transmit_Data(TR_data, 1, repeated_start);
 	}
-	else return 1;
+	else{return 1;}
 	return 0;
 }
+
 
 ISR (TWI_vect)
 {

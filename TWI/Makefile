@@ -39,7 +39,7 @@ HEADERS= TWI_lib.h ../avr_common/uart.h
 
 # !!!!!!!!!!!!!!!! MODIFY HERE !!!!!!!!!!!!!!!! 
 
-include ../avr_common/avr.mk
+include ../avr_common/avr_sara.mk
 
 
 

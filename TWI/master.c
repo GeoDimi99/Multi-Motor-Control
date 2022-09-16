@@ -18,17 +18,12 @@ int main(void){
 	data[4]='l';
 	data[5]='o';
 	data[6]='\0';
-	
-	TWI_Transmit_Data((void*)data, 7, 0);
-	
-	_delay_ms(1000);
-	
-	/*TWI_Read_Data(0x01, 7, 0);
-	
-	_delay_ms(1000);
-	
+
+	TWI_Transmit_Data((void*const)data, 7, 0);
+	while (!is_TWI_ready()) { _delay_us(1);}
+	TWI_Read_Data(0x01, 6, 0); 
+	while (!is_TWI_ready()) { _delay_us(1);}
 	printf("%s\n", Receive_Buffer);
 	
-	_delay_ms(1000);*/
 	return 0;
 }

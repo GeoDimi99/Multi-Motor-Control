@@ -18,11 +18,12 @@ int receive_len;                                     //Lunghezza della ricezione
 typedef enum {
 	Ready,
 	Initializing,
+	Slave_Initialized,
 	Repeated_Start,
 	Master_Transmitter,
 	Master_Receiver,
 	Slave_Transmitter,
-	Slave_Receiver
+	Slave_Receiver, 
 } TWI_mode;
 
 //struttura dati info TWI
@@ -169,7 +170,8 @@ void TWI_Init(void);
 void Slave_Addr_init(uint8_t addr, uint8_t brd);
 uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeated_start);
 uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start);
-uint8_t Slave_Receiver_Read_Data(uint8_t SLAW_addr, uint8_t bytes_to_read, uint8_t repeated_start);
+uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t data_len);
+uint8_t TWI_Slave_Receive_Data(uint8_t SL_addr);
 
 #endif
 

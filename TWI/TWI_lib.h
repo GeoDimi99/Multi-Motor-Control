@@ -157,7 +157,7 @@ TWI_info_struct TWI_info;
 #define ARBITRATION_LOST_SR_BRD      0x78                //il master ha perso l'arbitrato, precendentemente indirizzato con broadcast
 
 //SLAVE TRANSMITTER//
-#define SLAR_RV_ACK_TR               0xA8                //si è ricevuto il proprio SLA + R, è stato trsamsesso un ACK
+#define SLAR_RV_ACK_TR               0xA8                //si è ricevuto il proprio SLA + R, è stato trasmesso un ACK
 #define S_DATA_TR_ACK_RV             0xB8                //un dato è stato trasmesso, si è ricevuto un ACK
 #define S_DATA_TR_NACK_RV            0xC0                //un dato è stato trasmesso, si è ricevuto un NACK
 #define ARBITRATION_LOST_ST          0xB0                //il master ha perso l'arbitrato

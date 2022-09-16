@@ -13,8 +13,10 @@ int main(void){
 	sei();                                       //abilita le interruzioni globali
 	TWI_Init();                                  //inizializza TWI
 	Slave_Addr_init(0x01, 1);
-	_delay_ms(5000);
+	
+	_delay_ms(1000);
 
-	printf("%s", Receive_Buffer);
+	printf("%s\n", Receive_Buffer);
+	
 	return 0;
 }

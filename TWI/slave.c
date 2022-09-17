@@ -21,9 +21,25 @@ int main(void){
 	data[5]='\0';
 
 	TWI_Slave_Receive_Data(0x01); 
-	while (!is_TWI_ready()) { _delay_us(1);}
+
 	printf("%s\n", Receive_Buffer);
+	
 	TWI_Slave_Transmit_Data(0x01, (void*)data, 6);
+	
+	TWI_Slave_Receive_Data(0x01); 
+
+	printf("%s\n", Receive_Buffer);
+	
+	TWI_Slave_Transmit_Data(0x01, (void*)data, 6);
+	
+	
+	TWI_Slave_Transmit_Data(0x01, (void*)data, 6);
+	
+	TWI_Slave_Receive_Data(0x01); 
+	
+	printf("%s\n", Receive_Buffer);
+	
 	printf("bye bye\n");
+	
 	return 0;
 }

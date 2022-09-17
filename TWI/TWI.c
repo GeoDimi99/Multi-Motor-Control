@@ -17,7 +17,7 @@ void TWI_Init(){
 }
 
 uint8_t is_TWI_ready(){
-	if ( (TWI_info.mode == Ready) | (TWI_info.mode == Repeated_Start) ) return 1;
+	if (TWI_info.mode == Ready) return 1;
 	else return 0;
 }
 
@@ -50,6 +50,7 @@ uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_
 		uint8_t TR_data[1];
 		TR_data[0] = (TWI_addr << 1) | 0x01;
 		TWI_Transmit_Data(TR_data, 1, repeated_start);
+		while (!is_TWI_ready()){_delay_us(1);}
 	}
 	else return 1;
 	return 0;
@@ -63,7 +64,7 @@ uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t da
 		TWAR= (SL_addr << 1) | 0x01;          //LSB=1 per il riconoscimento del broadcast
 		TWI_Set_Address();
 		uint8_t *data = (uint8_t *)TR_data;
-		for (int i =TB_Index; i<TB_Index+ data_len; i++){
+		for (int i =0; i< data_len; i++){
 			Transmit_Buffer[i]= data[i];
 		}
 		while (!is_TWI_ready()) { _delay_us(1);}
@@ -126,6 +127,12 @@ ISR (TWI_vect){
 		
 		case ARBITRATION_LOST:
 			printf("ARBITRATION_LOST\n");
+			
+			if (TWI_info.mode == Initializing){
+				TB_Index--; 
+				TWI_Send_Start();
+				break;
+			}
 		
 			TWI_info.error_code = TWI_STATUS;
 		

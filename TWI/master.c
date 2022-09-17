@@ -20,10 +20,24 @@ int main(void){
 	data[6]='\0';
 
 	TWI_Transmit_Data((void*const)data, 7, 0);
-	while (!is_TWI_ready()) { _delay_us(1);}
+
 	TWI_Read_Data(0x01, 6, 0); 
-	while (!is_TWI_ready()) { _delay_us(1);}
+
 	printf("%s\n", Receive_Buffer);
+	
+	TWI_Transmit_Data((void*const)data, 7, 0);
+
+	TWI_Read_Data(0x01, 6, 0); 
+
+	printf("%s\n", Receive_Buffer);
+	
+	TWI_Read_Data(0x01, 6, 0); 
+	
+	printf("%s\n", Receive_Buffer);
+	
+	TWI_Transmit_Data((void*const)data, 7, 0);
+	
+	printf("bye bye\n");
 	
 	return 0;
 }

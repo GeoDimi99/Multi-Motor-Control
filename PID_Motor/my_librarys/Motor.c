@@ -3,13 +3,14 @@
 
 
 
+
 Motor* Motor_init(float K_p, float K_i, float K_d){
 	
 	//Inizzializzazione di tools indispensabili per il motore
 	digit_init();		// Controllo della direzione del motore
 	pwm_init();			// Controllo generatore d'onda PWM
 	encoder_init();		// Lettura dello stato corrente
-	timer5_init(10);	// Controllo di eventi con intervalli di tempo regolari
+	timer5_init(LOOP_TIMING);	// Controllo di eventi con intervalli di tempo regolari
 	
 	// Allocazione dell'oggetto Motor
 	Motor* mtr = (Motor*) malloc(sizeof(Motor));
@@ -18,6 +19,13 @@ Motor* Motor_init(float K_p, float K_i, float K_d){
 	mtr->Kp = K_p;
 	mtr->Ki = K_i;
 	mtr->Kd = K_d;
+	
+	// Inizializzazione dell'intensità a zero
+	mtr->u_d = 0;
+	mtr->u_i = 0;
+	mtr->u_p = 0;
+	mtr->current_pwm = 0;
+	mtr->error = 0; 
 	
 	return mtr;
 	
@@ -51,30 +59,50 @@ void set_desired_velocity(Motor* mtr, uint16_t desired_velocity, dir_t direction
 }
 
 void spin_once(Motor* mtr){
-	printf("entriamo1 con questo tipo %d\n",mtr->type_controller);
 	uint16_t curr_pos = encoder_read();				// Lettura posizione corrente
 	uint16_t prev_pos = mtr->angular_position;		// Lettura posizione precedente
+
+	float curr_vel = (curr_pos - prev_pos)/LOOP_TIMING;
+	float des_vel = mtr->desired_velocity;
 	
-	uint16_t curr_vel = curr_pos - prev_pos;
-	
+	float curr_err = des_vel - curr_vel;			// Calcolo dell'errore
+	//printf("curr err %d\n", (int)curr_err);
 	mtr-> angular_position = curr_pos;				// Setto posizione attuale
 	mtr->angular_velocity = curr_vel; 				// Setto velocita attuale
 	
-	printf("direzione %d\n",mtr->direction);
+	
 	uint8_t dir_pin = (mtr->direction) ? (1 << 4) : (1 << 5);
-	uint16_t des_vel = mtr->desired_velocity;
+	
 	
 	switch(mtr->type_controller){
 		case OPEN_LOOP:
 			// Caso : Controllore ad anello aperto
 			digit_write(dir_pin,1);					//Settiamo la direzione
 			pwm_set_intensity(des_vel);				//Settiamo l'intensità di velocita
+			
 			mtr->current_pwm = des_vel;				//Settiamo la pwm come l'intensita di velocita desiderata
 			mtr->error = 0;							//Imponiamo l'errore pari a zero
 			break;
+			
 		case CLOSE_LOOP:
 			// Caso : Controllore ad anello chiuso
-			//TODO
+			mtr->u_d = mtr->Kd * (curr_err - mtr->error) / LOOP_TIMING; 	//Calcolo della componente derivativa
+			mtr->u_i += mtr->Ki * curr_err * LOOP_TIMING ;					//Calcolo della componente integrativa
+			mtr->u_p = mtr->Kp * curr_err;									//Calcolo della componente proporzionale
+			 
+			float u_tot = mtr->current_pwm;
+			u_tot += mtr->u_d + mtr->u_i + mtr->u_p; 						//Settiamo l'intensità della pwm corrente
+			
+			//Controllo del range dell'ingresso dell'onda quadra
+			if      (u_tot < 0.0f) mtr->current_pwm = 0;
+			else if (u_tot > 255.0f) mtr->current_pwm = 255;
+			else                     mtr->current_pwm = (int) u_tot;
+			 
+			mtr->error = curr_err;
+			 
+			digit_write(dir_pin,1);							//Settiamo la direzione motore
+			pwm_set_intensity(mtr->current_pwm);			//Settiamo l'intensitàd di velocita 
+			 
 			break;
 	}
 	

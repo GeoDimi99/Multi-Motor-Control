@@ -26,7 +26,8 @@ void pwm_init(void){
 	
 }
 
-void pwm_set_intensity(uint8_t intensity){
+void pwm_set_intensity(uint8_t intensity){ 
+	
 	//Settiamo l'intensità
 	OCR1CL = 255 - intensity;
 }

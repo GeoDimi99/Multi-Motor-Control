@@ -7,6 +7,8 @@
 #include "encoder.h"
 #include "timer.h"
 
+#define LOOP_TIMING 10
+
 
 typedef enum {OPEN_LOOP, CLOSE_LOOP} ctrtype_t;
 
@@ -18,13 +20,16 @@ typedef struct{
 	uint16_t angular_velocity;
 	uint16_t desired_velocity;
 	uint8_t current_pwm;
+	float error;
 	dir_t direction;
 	
 	// Variabili di controllo
 	float Kp;
 	float Ki;
 	float Kd;
-	float error;
+	float u_p;
+	float u_i;
+	float u_d;
 	
 	// Variabile scelta tipo controllore
 	ctrtype_t type_controller;
@@ -50,7 +55,7 @@ void set_type_controller(Motor* mtr, ctrtype_t type_controller);
 // set_desired_velocity: setta la velocità desiderata e la direzione in particolare assume i parametri:
 // - desired_velocity : che può assumere diversi valori in base alla alla modalità del controllore:
 // 			--- OPEN_LOOP : si regola l'intensità da 0 a 255;
-//		 	--- CLOSE_LOOP: si regola la velocità da ... a ...
+//		 	--- CLOSE_LOOP: si regola la velocità da 0 a 300;
 // - direction: che può assumere i valori:
 //			--- LEFT : gira a sinistra 
 //			--- RIGHT: gira a destra

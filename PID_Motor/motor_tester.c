@@ -18,15 +18,15 @@ int main(void){
 	printf_init();
 
 	//Inizializzazione del motore
-	mtr = Motor_init(0, 0, 0);
+	mtr = Motor_init(0.5f,0,0.1f);
 	set_type_controller(mtr, OPEN_LOOP);
-	set_desired_velocity(mtr, 136, LEFT);
+	set_desired_velocity(mtr, 255, LEFT);
 	
 	
 	
 	//Settiamo l'intensità iniziale:
 	while(1){
-		printf("Velocita angolare: %d\n",mtr->desired_velocity);
+		printf("current_angular_velocity: %d, desidered_angular_velocity: %d, error: %d\n Ingresso: %d\n",mtr->angular_velocity,mtr->desired_velocity,(int) mtr->error,mtr->current_pwm);
 		_delay_ms(1000);
 				
 	}

@@ -1,5 +1,4 @@
-#include <stdint.h>
-#include <avr/io.h>
+
 #include "pwm_signal.h"
 
 // Utilizziamo il timer 5, perché nello standard del AVR Mega è dedicato al servo motore.
@@ -11,7 +10,6 @@
 #define TCCRB_MASK (1<<WGM12)|(1<<CS10)
 
 void pwm_init(void){
-	//cli();
 	
 	TCCR1A = TCCRA_MASK;		//Impostiamo i registri di TCCR A
 	TCCR1B = TCCRB_MASK;		//Impostiamo i registri di TCCR B
@@ -26,7 +24,6 @@ void pwm_init(void){
 	const uint8_t mask = (1<<7);
 	DDRB |= mask;
 	
-	//sei();
 }
 
 void pwm_set_intensity(uint8_t intensity){

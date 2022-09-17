@@ -1,5 +1,9 @@
+
 #pragma once
+
 #include <stdint.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
 
 //encoder_init: inizzailizzazione della lettura del encoder sui pin 53 e 52; 

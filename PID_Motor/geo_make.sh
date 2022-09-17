@@ -3,7 +3,7 @@
 make clean
 #2. Creazione dell file motore
 make && \ 
-make encoder_reader.hex 
+make motor_tester.hex 
 
 
 

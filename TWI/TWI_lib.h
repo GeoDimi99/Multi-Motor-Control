@@ -18,12 +18,11 @@ int receive_len;                                     //Lunghezza della ricezione
 typedef enum {
 	Ready,
 	Initializing,
-	Slave_Initialized,
 	Repeated_Start,
 	Master_Transmitter,
 	Master_Receiver,
 	Slave_Transmitter,
-	Slave_Receiver, 
+	Slave_Receiver
 } TWI_mode;
 
 //struttura dati info TWI

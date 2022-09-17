@@ -19,23 +19,23 @@ int main(void){
 	data[5]='o';
 	data[6]='\0';
 
-	TWI_Transmit_Data((void*const)data, 7, 0); //1
+	TWI_Transmit_Data((void*const)data, 7, 0);
 
-	TWI_Read_Data(0x01, 6, 0); //2
-	
-	printf("%s\n", Receive_Buffer);
-	
-	TWI_Transmit_Data((void*const)data, 7, 0); //3
-
-	TWI_Read_Data(0x01, 6, 0);  //4
+	TWI_Read_Data(0x01, 6, 0); 
 
 	printf("%s\n", Receive_Buffer);
 	
-	TWI_Read_Data(0x01, 6, 0); //5
+	TWI_Transmit_Data((void*const)data, 7, 0);
+
+	TWI_Read_Data(0x01, 6, 0); 
+
+	printf("%s\n", Receive_Buffer);
+	
+	TWI_Read_Data(0x01, 6, 0); 
 	
 	printf("%s\n", Receive_Buffer);
 	
-	TWI_Transmit_Data((void*const)data, 7, 0); //6
+	TWI_Transmit_Data((void*const)data, 7, 0);
 	
 	printf("bye bye\n");
 	

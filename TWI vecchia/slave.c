@@ -20,25 +20,25 @@ int main(void){
 	data[4]='d';
 	data[5]='\0';
 
-	TWI_Slave_Receive_Data(0x01);  //1
+	TWI_Slave_Receive_Data(0x01); 
 
 	printf("%s\n", Receive_Buffer);
 	
-	TWI_Slave_Transmit_Data(0x01, (void*)data, 6); //2
+	TWI_Slave_Transmit_Data(0x01, (void*)data, 6);
 	
-	TWI_Slave_Receive_Data(0x01);  //3
+	TWI_Slave_Receive_Data(0x01); 
 
 	printf("%s\n", Receive_Buffer);
 	
-	TWI_Slave_Transmit_Data(0x01, (void*)data, 6); //4
+	TWI_Slave_Transmit_Data(0x01, (void*)data, 6);
 	
 	
-	TWI_Slave_Transmit_Data(0x01, (void*)data, 6); //5
+	TWI_Slave_Transmit_Data(0x01, (void*)data, 6);
 	
-	TWI_Slave_Receive_Data(0x01); //6
+	TWI_Slave_Receive_Data(0x01); 
 	
 	printf("%s\n", Receive_Buffer);
-    
+	
 	printf("bye bye\n");
 	
 	return 0;

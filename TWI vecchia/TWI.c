@@ -22,6 +22,7 @@ uint8_t is_TWI_ready(){
 }
 
 uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeated_start){
+	printf_init();
 	if (data_len <= TRANSMIT_BUFLEN){
 		while (!is_TWI_ready() ) { _delay_us(1);}
 		TWI_info.mode = Initializing;             
@@ -36,8 +37,7 @@ uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeate
 			TWDR = Transmit_Buffer[TB_Index++]; 
 			TWI_Send_Transmit(); 
 		}
-		else{TWI_Send_Start();}
-		while (!is_TWI_ready()){_delay_ms(100);}
+		else{ TWI_Send_Start();}
 	}
 	else{ return 1; }
 	return 0;
@@ -45,12 +45,12 @@ uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeate
 
 uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start){
 	if (bytes_to_read < RECEIVE_BUFLEN){
-		while (!is_TWI_ready()) { _delay_us(1);}
 		RB_Index = 0;
 		receive_len = bytes_to_read;
 		uint8_t TR_data[1];
 		TR_data[0] = (TWI_addr << 1) | 0x01;
 		TWI_Transmit_Data(TR_data, 1, repeated_start);
+		while (!is_TWI_ready()){_delay_us(1);}
 	}
 	else return 1;
 	return 0;
@@ -58,7 +58,6 @@ uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_
 
 uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t data_len){
 	if (data_len <= TRANSMIT_BUFLEN){
-		while (!is_TWI_ready()) { _delay_us(1);}
 		TWI_info.mode = Initializing;
 		TB_Index=0;
 		transmit_len=data_len;
@@ -74,9 +73,8 @@ uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t da
 	return 0; 
 }
 
-uint8_t TWI_Slave_Receive_Data(uint8_t SL_addr){ 
-	while (!is_TWI_ready()) {_delay_us(1);} 
-	TWI_info.mode=Initializing;
+uint8_t TWI_Slave_Receive_Data(uint8_t SL_addr){    
+	TWI_info.mode = Initializing;
 	TWAR= (SL_addr << 1) | 0x01;          //LSB=1 per il riconoscimento del broadcast
 	TWI_Set_Address();
 	while (!is_TWI_ready()) { _delay_us(1);}
@@ -88,17 +86,21 @@ ISR (TWI_vect){
 	switch (TWI_STATUS){
 		
 		case REP_START_TRANSMITTED:
+			printf("REP_START_TRANSMITTED\n");
 			TWI_info.mode=Repeated_Start;
 		
 		case START_TRANSMITTED:
+			printf("START_TRANSMITTED\n");
 			TWDR=Transmit_Buffer[TB_Index++]; 
 			TWI_Send_Transmit();
 			break;
 			
 		case SLAW_TR_ACK_RV:
+			printf("SLAW_TR_ACK_RV\n");
 			TWI_info.mode = Master_Transmitter;
 			
 		case M_DATA_TR_ACK_RV:
+			printf("M_DATA_TR_ACK_RV\n");
 		
 			if (TB_Index < transmit_len){
 				TWDR=Transmit_Buffer[TB_Index++];
@@ -115,12 +117,16 @@ ISR (TWI_vect){
 			break;
 			
 		case SLAW_TR_NACK_RV:
+			printf("SLAW_TR_NACK_RV\n");
 		
 		case M_DATA_TR_NACK_RV:
+			printf("M_DATA_TR_NACK_RV\n");
 			
 		case SLAR_TR_NACK_RV:
+			printf("SLAR_TR_NACK_RV\n");
 		
 		case ARBITRATION_LOST:
+			printf("ARBITRATION_LOST\n");
 			
 			if (TWI_info.mode == Initializing){
 				TB_Index--; 
@@ -140,6 +146,7 @@ ISR (TWI_vect){
 			break;
 		
 		case SLAR_TR_ACK_RV:
+			printf("SLAR_TR_ACK_RV\n");
 			TWI_info.mode=Master_Receiver;
 			if (RB_Index < receive_len -1){
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
@@ -152,6 +159,7 @@ ISR (TWI_vect){
 			break;
 		
 		case DATA_RV_ACK_TR:
+			printf("DATA_RV_ACK_TR\n");
 			Receive_Buffer[RB_Index++]=TWDR;
 			if (RB_Index < receive_len -1){
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
@@ -164,6 +172,7 @@ ISR (TWI_vect){
 			break;
 		
 		case DATA_RV_NACK_TR:
+			printf("DATA_RV_NACK_TR\n");
 			Receive_Buffer[RB_Index++] = TWDR;
 			TWI_info.error_code = TWI_SUCCESS;	
 			if (TWI_info.repeated_start){
@@ -176,12 +185,16 @@ ISR (TWI_vect){
 			break;
 			
 		case ARBITRATION_LOST_SR_ADDR:
+			printf("ARBITRATION_LOST_SR_ADDR\n");
 		
 		case ARBITRATION_LOST_SR_BRD:
+			printf("ARBITRATION_LOST_SR_BRD\n");
 		
 		case BRDW_RV_ACK_TR:
+			printf("BRDW_RV_ACK_TR\n");
 			
 		case SLAW_RV_ACK_TR:
+			printf("SLAW_RV_ACK_TR\n");
 			TWI_info.mode=Slave_Receiver;
 			if (RB_Index < RECEIVE_BUFLEN -1){                     
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
@@ -194,8 +207,10 @@ ISR (TWI_vect){
 			break;
 			
 		case DATA_BRD_RV_ACK_TR:
+			printf("DATA_BRD_RV_ACK_TR\n");
 		
 		case DATA_SLA_RV_ACK_TR:
+			printf("DATA_SLA_RV_ACK_TR\n");
 			Receive_Buffer[RB_Index++] = TWDR; 
 			if (RB_Index < RECEIVE_BUFLEN-1){                
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
@@ -207,9 +222,11 @@ ISR (TWI_vect){
 			}
 			break;
 			
-		case DATA_BRD_RV_NACK_TR: 
+		case DATA_BRD_RV_NACK_TR:      //forse qui vanno inviati degli ACK/NACK?
+			printf("DATA_BRD_RV_NACK_TR\n");
 		
 		case DATA_SLA_RV_NACK_TR:
+			printf("DATA_SLA_RV_NACK_TR\n");
 			Receive_Buffer[RB_Index++] = TWDR;
 			TWI_info.error_code = TWI_SUCCESS;	
 			if (TWI_info.repeated_start){}
@@ -219,26 +236,31 @@ ISR (TWI_vect){
 			break;
 			
 		case S_DATA_TR_NACK_RV:
+			printf("S_DATA_TR_NACK_RV\n");
 		
 		case S_LDATA_TR_ACK_RV:
+			printf("S_LDATA_TR_ACK_RV\n");
 		
 		case START_STOP_FOR_SLAVE:     
-			TWI_info.error_code = TWI_SUCCESS;
-			TWI_Send_NACK();
+			printf("START_STOP_FOR_SLAVE\n");
+			TWI_info.error_code = TWI_STATUS;
+			TWI_Send_NACK();	
 			if (TWI_info.repeated_start){}
 			else{
 				TWI_info.mode = Ready;
-				TWI_Send_NACK();
 			}
 			break;
 		
 		case ARBITRATION_LOST_ST:
+			printf("ARBITRATION_LOST_ST\n");
 		
 		case SLAR_RV_ACK_TR:
+			printf("SLAR_RV_ACK_TR\n");
 			TWI_info.mode=Slave_Transmitter;
 			TWI_Set_Address();
 		
 		case S_DATA_TR_ACK_RV:
+			printf("S_DATA_TR_ACK_RV\n");
 			TWDR= Transmit_Buffer[TB_Index++]; 
 			if (TB_Index < transmit_len){                    
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
@@ -251,9 +273,11 @@ ISR (TWI_vect){
 			break;
 		
 		case TWI_NO_RELEVANT_INFO:
+			printf("TWI_NO_RELEVANT_INFO\n");
 			break;
 		
 		case TWI_ILLEGAL_START_STOP:
+			printf("TWI_ILLEGAL_START_STOP\n");
 			TWI_info.mode=Ready;
 			TWI_Send_Stop();
 			break;

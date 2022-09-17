@@ -16,17 +16,6 @@ void TWI_Init(){
 	RB_Index=0; 							  //valore iniziale RB_Index  (per sicurezza, considerare di toglierla)
 }
 
-/*void Slave_Addr_init(uint8_t addr, uint8_t brd){
-	if (brd){
-		TWAR= (addr << 1) | 0x01;
-		TWI_Set_Address();
-	}
-	else{
-		TWAR= (addr << 1) | 0x00;
-		TWI_Set_Address();
-	}
-}*/
-
 uint8_t is_TWI_ready(){
 	if ( (TWI_info.mode == Ready) | (TWI_info.mode == Repeated_Start) ) return 1;
 	else return 0;
@@ -35,7 +24,7 @@ uint8_t is_TWI_ready(){
 uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeated_start){
 	printf_init();
 	if (data_len <= TRANSMIT_BUFLEN){
-		while (!is_TWI_ready() && TWI_info.mode!=Slave_Initialized) { _delay_us(1);}
+		while (!is_TWI_ready() ) { _delay_us(1);}
 		TWI_info.mode = Initializing;             
 		TWI_info.repeated_start = repeated_start;
 		uint8_t *data = (uint8_t *)TR_data;
@@ -70,13 +59,14 @@ uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t da
 	if (data_len <= TRANSMIT_BUFLEN){
 		TWI_info.mode = Initializing;
 		TB_Index=0;
+		transmit_len=data_len;
 		TWAR= (SL_addr << 1) | 0x01;          //LSB=1 per il riconoscimento del broadcast
 		TWI_Set_Address();
 		uint8_t *data = (uint8_t *)TR_data;
 		for (int i =TB_Index; i<TB_Index+ data_len; i++){
 			Transmit_Buffer[i]= data[i];
 		}
-		TWI_info.mode= Slave_Initialized;
+		while (!is_TWI_ready()) { _delay_us(1);}
 	}
 	else return 1; 
 	return 0; 
@@ -86,7 +76,7 @@ uint8_t TWI_Slave_Receive_Data(uint8_t SL_addr){
 	TWI_info.mode = Initializing;
 	TWAR= (SL_addr << 1) | 0x01;          //LSB=1 per il riconoscimento del broadcast
 	TWI_Set_Address();
-	TWI_info.mode= Slave_Initialized;
+	while (!is_TWI_ready()) { _delay_us(1);}
 	return 0; 
 }
 
@@ -265,7 +255,7 @@ ISR (TWI_vect){
 		case S_DATA_TR_ACK_RV:
 			printf("S_DATA_TR_ACK_RV\n");
 			TWDR= Transmit_Buffer[TB_Index++]; 
-			if (TB_Index < TRANSMIT_BUFLEN -1){                    
+			if (TB_Index < transmit_len){                    
 				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_ACK();
 			}

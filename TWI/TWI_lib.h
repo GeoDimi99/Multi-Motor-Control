@@ -9,8 +9,8 @@
 #define RECEIVE_BUFLEN 20
 uint8_t Transmit_Buffer[TRANSMIT_BUFLEN];
 volatile uint8_t Receive_Buffer[RECEIVE_BUFLEN];     //volatile-->può cambiare ad ogni istante
-volatile int TB_Index;                             //indicizza il buffer di trasmissione--> può cambiare ad ogni istante
-int RB_Index;                                      //indicizza il buffer di ricezione
+volatile int TB_Index;                               //indicizza il buffer di trasmissione--> può cambiare ad ogni istante
+volatile int RB_Index;                               //indicizza il buffer di ricezione --> può cambiare ad ogni istante
 int transmit_len;                                    //Lunghezza della trasmissione (minore di TRANSMIT_BUFLEN)
 int receive_len;                                     //Lunghezza della ricezione (minore di RECEIVE_BUFLEN)
 
@@ -28,7 +28,7 @@ typedef enum {
 //struttura dati info TWI
 
 typedef struct TWI_info_struct{
-	TWI_mode mode;
+	volatile TWI_mode mode;
 	uint8_t error_code;
 	uint8_t repeated_start;
 }TWI_info_struct;
@@ -166,11 +166,11 @@ TWI_info_struct TWI_info;
 //dichiarazione delle funzioni
 uint8_t is_TWI_ready(void);
 void TWI_Init(void);
-void Slave_Addr_init(uint8_t addr, uint8_t brd);
+void Slave_Addr_init(uint8_t SL_addr, uint8_t brd);
 uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeated_start);
-uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start);
-uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t data_len);
-uint8_t TWI_Slave_Receive_Data(uint8_t SL_addr);
+uint8_t TWI_Read_Data(uint8_t SL_addr, uint8_t bytes_to_read, uint8_t repeated_start);
+uint8_t TWI_Slave_Transmit_Data(void *const TR_data, uint8_t data_len);
+uint8_t TWI_Slave_Receive_Data();
 
 #endif
 

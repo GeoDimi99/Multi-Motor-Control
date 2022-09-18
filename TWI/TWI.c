@@ -16,6 +16,17 @@ void TWI_Init(){
 	RB_Index=0; 							  //valore iniziale RB_Index  (per sicurezza, considerare di toglierla)
 }
 
+void Slave_Addr_init(uint8_t SL_addr, uint8_t brd){
+	TWI_Init(); 
+	if (brd){
+		TWAR= (SL_addr << 1) | 0x01;           //LSB=1 per il riconoscimento del broadcast
+	}
+	else {
+		TWAR= (SL_addr << 1) | 0x00;
+	}
+}
+
+
 uint8_t is_TWI_ready(){
 	if (TWI_info.mode == Ready) return 1;
 	else return 0;
@@ -37,32 +48,31 @@ uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeate
 			TWI_Send_Transmit(); 
 		}
 		else{TWI_Send_Start();}
-		while (!is_TWI_ready()){_delay_ms(100);}
+		while (!is_TWI_ready()){_delay_ms(10);} 
 	}
 	else{ return 1; }
 	return 0;
 }
 
-uint8_t TWI_Read_Data(uint8_t TWI_addr, uint8_t bytes_to_read, uint8_t repeated_start){
+uint8_t TWI_Read_Data(uint8_t SL_addr, uint8_t bytes_to_read, uint8_t repeated_start){
 	if (bytes_to_read < RECEIVE_BUFLEN){
 		while (!is_TWI_ready()) { _delay_us(1);}
 		RB_Index = 0;
 		receive_len = bytes_to_read;
 		uint8_t TR_data[1];
-		TR_data[0] = (TWI_addr << 1) | 0x01;
+		TR_data[0] = (SL_addr << 1) | 0x01;                           //modalità read
 		TWI_Transmit_Data(TR_data, 1, repeated_start);
 	}
 	else return 1;
 	return 0;
 }
 
-uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t data_len){
+uint8_t TWI_Slave_Transmit_Data(void *const TR_data, uint8_t data_len){
 	if (data_len <= TRANSMIT_BUFLEN){
 		while (!is_TWI_ready()) { _delay_us(1);}
 		TWI_info.mode = Initializing;
 		TB_Index=0;
 		transmit_len=data_len;
-		TWAR= (SL_addr << 1) | 0x01;          //LSB=1 per il riconoscimento del broadcast
 		TWI_Set_Address();
 		uint8_t *data = (uint8_t *)TR_data;
 		for (int i =0; i< data_len; i++){
@@ -74,11 +84,11 @@ uint8_t TWI_Slave_Transmit_Data(uint8_t SL_addr, void *const TR_data, uint8_t da
 	return 0; 
 }
 
-uint8_t TWI_Slave_Receive_Data(uint8_t SL_addr){ 
+uint8_t TWI_Slave_Receive_Data(){ 
 	while (!is_TWI_ready()) {_delay_us(1);} 
 	TWI_info.mode=Initializing;
-	TWAR= (SL_addr << 1) | 0x01;          //LSB=1 per il riconoscimento del broadcast
-	TWI_Set_Address();
+	RB_Index=0;
+	TWI_Set_Address(); 
 	while (!is_TWI_ready()) { _delay_us(1);}
 	return 0; 
 }
@@ -108,9 +118,9 @@ ISR (TWI_vect){
 				TWI_Send_Start();
 			}
 			else{
-				TWI_info.mode=Ready;
-				TWI_info.error_code=TWI_SUCCESS;
 				TWI_Send_Stop();
+				TWI_info.error_code=TWI_SUCCESS;
+				TWI_info.mode=Ready;
 			}	
 			break;
 			
@@ -134,31 +144,29 @@ ISR (TWI_vect){
 				TWI_Send_Start();
 			}
 			else{
-				TWI_info.mode=Ready;
 				TWI_Send_Stop();
+				TWI_info.mode=Ready;
 			}	
 			break;
 		
 		case SLAR_TR_ACK_RV:
 			TWI_info.mode=Master_Receiver;
-			if (RB_Index < receive_len -1){
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
+			TWI_info.error_code = TWI_NO_RELEVANT_INFO;
+			if (RB_Index < receive_len -1){ 
 				TWI_Send_ACK();
 			}
 			else{
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_NACK();
 			}
 			break;
 		
 		case DATA_RV_ACK_TR:
 			Receive_Buffer[RB_Index++]=TWDR;
+			TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 			if (RB_Index < receive_len -1){
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_ACK();
 			}
 			else{
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_NACK();
 			}
 			break;
@@ -170,8 +178,8 @@ ISR (TWI_vect){
 				TWI_Send_Start();
 			}
 			else{
-				TWI_info.mode = Ready;
 				TWI_Send_Stop();
+				TWI_info.mode = Ready;
 			}
 			break;
 			
@@ -183,12 +191,11 @@ ISR (TWI_vect){
 			
 		case SLAW_RV_ACK_TR:
 			TWI_info.mode=Slave_Receiver;
+			TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 			if (RB_Index < RECEIVE_BUFLEN -1){                     
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_ACK();
 			}
 			else{
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_NACK();
 			}
 			break;
@@ -197,12 +204,11 @@ ISR (TWI_vect){
 		
 		case DATA_SLA_RV_ACK_TR:
 			Receive_Buffer[RB_Index++] = TWDR; 
+			TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 			if (RB_Index < RECEIVE_BUFLEN-1){                
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_ACK();
 			}
 			else{
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_NACK();
 			}
 			break;
@@ -222,13 +228,12 @@ ISR (TWI_vect){
 		
 		case S_LDATA_TR_ACK_RV:
 		
-		case START_STOP_FOR_SLAVE:     
+		case START_STOP_FOR_SLAVE:
 			TWI_info.error_code = TWI_SUCCESS;
 			TWI_Send_NACK();
 			if (TWI_info.repeated_start){}
 			else{
 				TWI_info.mode = Ready;
-				TWI_Send_NACK();
 			}
 			break;
 		
@@ -240,12 +245,11 @@ ISR (TWI_vect){
 		
 		case S_DATA_TR_ACK_RV:
 			TWDR= Transmit_Buffer[TB_Index++]; 
+			TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 			if (TB_Index < transmit_len){                    
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_ACK();
 			}
 			else{
-				TWI_info.error_code = TWI_NO_RELEVANT_INFO;
 				TWI_Send_NACK();
 			}
 			break;
@@ -254,8 +258,8 @@ ISR (TWI_vect){
 			break;
 		
 		case TWI_ILLEGAL_START_STOP:
-			TWI_info.mode=Ready;
 			TWI_Send_Stop();
+			TWI_info.mode=Ready;
 			break;
 	}
 }

@@ -1,6 +1,16 @@
 
 
 #include "uart.h"
+#include "../avr_common/uart.h"
+
+uint8_t rx_buffer[SIZE_RX_BUFFER];
+uint8_t rx_index = 0;
+uint8_t rd_index = 0;
+						
+// Buffer di trasmissione
+uint8_t tx_buffer[SIZE_TX_BUFFER];
+uint8_t tx_index = SIZE_TX_BUFFER - 1;
+uint8_t wr_index = 0;
 
 //| | | | |  | | buffer di input '\0'
 //^            ^
@@ -17,6 +27,7 @@
 
 // - RX ISR per la UART:
 ISR(USART0_RX_vect) {
+	printf("USART0_RX_vect");
   uint8_t c = UDR0;
   rx_buffer[rx_index] = c;
   rx_index = (rx_index + 1) % SIZE_RX_BUFFER;
@@ -46,6 +57,7 @@ void UART_init(void){
 
   UCSR0C = (1<<UCSZ01) | (1<<UCSZ00); 				/* 8-bit data */
   UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);   /* Abilitiamo RX e TX */
+  sei();
 
 }
 
@@ -53,12 +65,13 @@ void UART_init(void){
 
 uint8_t UART_getChar(uint8_t* buf) {
   // Attesa di recezione di un carattere
+  //printf("getChar\n");
   if(RX_is_empty()) return 0; 			// Ritorno 0 in caso insuccesso
-  
+  printf("dopo\n");
   //Lettura dal rx_buffer
   *buf = rx_buffer[rd_index];		 			// Lettura dal buffer se è presente un valore
   rd_index = (rd_index + 1) % SIZE_RX_BUFFER;   // Andiamo avanti con l'indice di lettura;
-  
+  printf("esco\n");
   return 1; 						 			// Ritorno 1 in caso successo
 }
 

@@ -11,7 +11,7 @@
 int main(void){
 	printf_init();
 	sei();                                       //abilita le interruzioni globali
-	TWI_Init();                                  //inizializza TWI
+	Slave_Addr_init(0x01, 1);  //inizializza TWI
 	uint8_t data[6]; 
 	data[0]= 'W';
 	data[1]='o';
@@ -19,25 +19,41 @@ int main(void){
 	data[3]='l';
 	data[4]='d';
 	data[5]='\0';
-
-	TWI_Slave_Receive_Data(0x01);  //1
+	
+	uint8_t data1[9]; 
+	data1[0]= 'S';
+	data1[1]='a';
+	data1[2]='r';
+	data1[3]='e';
+	data1[4]='t';
+	data1[5]='t';
+	data1[6]='a';
+	data1[7]='!';
+	data1[8]='\0';
+	
+	TWI_Slave_Receive_Data();  //1
 
 	printf("%s\n", Receive_Buffer);
 	
-	TWI_Slave_Transmit_Data(0x01, (void*)data, 6); //2
+	TWI_Slave_Transmit_Data((void*)data, 6); //2
 	
-	TWI_Slave_Receive_Data(0x01);  //3
+	TWI_Slave_Receive_Data();  //3
 
 	printf("%s\n", Receive_Buffer);
 	
-	TWI_Slave_Transmit_Data(0x01, (void*)data, 6); //4
+	TWI_Slave_Transmit_Data((void*)data, 6); //4
 	
+	TWI_Slave_Transmit_Data((void*)data, 6); //5
 	
-	TWI_Slave_Transmit_Data(0x01, (void*)data, 6); //5
-	
-	TWI_Slave_Receive_Data(0x01); //6
+	TWI_Slave_Receive_Data(); //6
 	
 	printf("%s\n", Receive_Buffer);
+	
+	TWI_Slave_Receive_Data(); //7
+	
+	printf("%s\n", Receive_Buffer);
+	
+	TWI_Slave_Transmit_Data((void*)data1, 9); //8*/
     
 	printf("bye bye\n");
 	

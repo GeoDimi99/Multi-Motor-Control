@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
   }
   char* filename=argv[1];
   int baudrate=atoi(argv[2]);
-  printf( "opening serial device [%s] ... ", filename);
+  printf( "opening serial device [%s] ... \n", filename);
   int fd=serial_open(filename);
   if (fd<=0) {
     printf ("Error\n");
@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
   } else {
     printf ("Success\n");
   }
-  printf( "setting baudrate [%d] ... ", baudrate);
+  printf( "setting baudrate [%d] ... \n", baudrate);
   int attribs=serial_set_interface_attribs(fd, baudrate, 0);
   if (attribs) {
     printf("Error\n");
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   while (1) {
     int n_read=read(fd, buf, bsize);
     for (int i=0; i<n_read; ++i) {
-      printf("%c ", buf[i]);
+      printf("%c", buf[i]);
     }
   }
 }

@@ -1,8 +1,11 @@
 
 #include "Motor.h"
 
+// Definizione del comportamento del vettore dei interrupt, cosa deve fare l'ISR:
 
 
+
+// Definizione delle funzioni riguardanti il motore:
 
 Motor* Motor_init(float K_p, float K_i, float K_d){
 	

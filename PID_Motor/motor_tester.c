@@ -1,36 +1,40 @@
 #include <util/delay.h>
 #include <stdio.h>
-#include "librarys/uart.h"  //Questo inizializza la seriale per supportare la printf
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "my_librarys/Motor.h"
+//#include "my_librarys/Motor.h"
+#include "my_librarys/uart.h"
 
-Motor* mtr;
+#define K_P 0.5f
+#define K_I	0.0f
+#define K_D 0.1f
 
-ISR(TIMER5_COMPA_vect) {
-	spin_once(mtr);
-}
+//Motor* mtr;
+
+//ISR(TIMER5_COMPA_vect) {
+	//spin_once(mtr);
+//}
+
+//uint8_t UART_putChar(uint8_t* buf);
+//uint8_t UART_getChar(uint8_t* buf);
+
+// Definizione del comportamento del vettore delle interrupt
 
 
 
 int main(void){
-	//Inizializzo i oggetti utili
-	printf_init();
-
-	//Inizializzazione del motore
-	mtr = Motor_init(0.5f,0,0.1f);
-	set_type_controller(mtr, OPEN_LOOP);
-	set_desired_velocity(mtr, 255, LEFT);
 	
+	uint8_t ret_string [20];
 	
-	
-	//Settiamo l'intensità iniziale:
 	while(1){
-		printf("current_angular_velocity: %d, desidered_angular_velocity: %d, error: %d\n Ingresso: %d\n",mtr->angular_velocity,mtr->desired_velocity,(int) mtr->error,mtr->current_pwm);
-		_delay_ms(1000);
-				
+		int r = 0;
+		while(UART_getChar(&ret_string[r]) && ret_string[r] != '\0') r++;
+		
+		int w = 0;
+		while(UART_putChar(&ret_string[w]) && ret_string[w] != '\0') w++;
 	}
 	
+	return 0;
 }
 
 

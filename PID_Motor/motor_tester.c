@@ -4,7 +4,7 @@
 #include <avr/interrupt.h>
 //#include "my_librarys/Motor.h"
 #include "my_librarys/uart.h"
-#include "../avr_common/uart.h"
+//#include "../avr_common/uart.h"
 
 
 #define K_P 0.5f
@@ -25,19 +25,16 @@
 
 
 int main(void){
-	printf_init();
-	UART_init();
+	//printf_init();
+	uartInit(19200);
 	
-	uint8_t ret_string [20];
 	
-	while(1){
-		int r = 0;
-		while(UART_getChar(&ret_string[r]) && ret_string[r] != '\0') r++;
-		
-		for(int i = 0; i < r ; i++) printf("%d\n",ret_string[i]); 
-		
-		int w = 0;
-		while(UART_putChar(&ret_string[w]) && ret_string[w] != '\0') w++;
+	while(1){ 
+		uartSendByte('a');
+		uartSendByte('\n');
+		uartSendByte('\0');
+		_delay_ms(1000);
+	
 	}
 	
 	return 0;

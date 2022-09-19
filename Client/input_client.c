@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     buf[strlen(buf)+1]='\0';
     buf[strlen(buf)]='\n';
 	if (strcmp(buf, "quit")==0) break;
-  	ssize_t n_write=write(fd, buf, strlen(buf) + 1);
+  	ssize_t n_write= write(fd, buf, strlen(buf) + 1);
     printf("\n");
   }
   close(fd);

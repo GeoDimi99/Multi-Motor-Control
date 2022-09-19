@@ -3,59 +3,57 @@
 #include "TWI_lib.h"
 #include <util/delay.h>
 #include <stdio.h>
+#include <string.h>
 #include <avr/interrupt.h>
 #include <string.h>
 #include "../avr_common/uart.h"
- 
+#include "../avr_common/uart1.h"
+
+#define SAMPLE_command "sample"
+#define GET_command "get"
+#define SET_command "set"
+#define APPLY_command "apply"
+
+#define velocity_len 10
  
 int main(void){
+	UART_init(); 
 	printf_init();
 	sei();                                       //abilita le interruzioni globali
-	Slave_Addr_init(0x01, 1);  //inizializza TWI
-	uint8_t data[6]; 
-	data[0]= 'W';
-	data[1]='o';
-	data[2]='r';
-	data[3]='l';
-	data[4]='d';
-	data[5]='\0';
+	Slave_Addr_init(0x01, 1);                    //inizializza TWI
 	
-	uint8_t data1[9]; 
-	data1[0]= 'S';
-	data1[1]='a';
-	data1[2]='r';
-	data1[3]='e';
-	data1[4]='t';
-	data1[5]='t';
-	data1[6]='a';
-	data1[7]='!';
-	data1[8]='\0';
-	
-	TWI_Slave_Receive_Data();  //1
+	uint8_t current_velocity[velocity_len]= "none";
+	uint8_t desired_velocity[velocity_len]= "none";
 
-	printf("%s\n", Receive_Buffer);
-	
-	TWI_Slave_Transmit_Data((void*)data, 6); //2
-	
-	TWI_Slave_Receive_Data();  //3
-
-	printf("%s\n", Receive_Buffer);
-	
-	TWI_Slave_Transmit_Data((void*)data, 6); //4
-	
-	TWI_Slave_Transmit_Data((void*)data, 6); //5
-	
-	TWI_Slave_Receive_Data(); //6
-	
-	printf("%s\n", Receive_Buffer);
-	
-	TWI_Slave_Receive_Data(); //7
-	
-	printf("%s\n", Receive_Buffer);
-	
-	TWI_Slave_Transmit_Data((void*)data1, 9); //8*/
-    
-	printf("bye bye\n");
-	
+	while(1){
+		printf("Slave\n"); 
+		
+		TWI_Slave_Receive_Data();     //ricevo comando "sample"
+		
+		printf("Buf: %s\n", Receive_Buffer); 
+		
+		TWI_Slave_Receive_Data();     //ricevo comando "get"
+		
+		printf("Buf: %s\n", Receive_Buffer); 
+		
+		TWI_Slave_Transmit_Data(current_velocity, velocity_len);  //invio velocità
+		
+		TWI_Slave_Receive_Data();       //ricevo comando "set"
+		
+		printf("Buf: %s\n", Receive_Buffer); 
+		
+		TWI_Slave_Receive_Data();           //ricevo desired velocity 
+		
+		strcpy(desired_velocity, Receive_Buffer);   //la salvo 
+		
+		printf("Buf: %s\n", Receive_Buffer);  //ricevo comando "apply"
+		
+		TWI_Slave_Receive_Data();             //ricevo comando "apply"
+		
+		strcpy(current_velocity, desired_velocity);  //applico la velocità
+		
+		printf("Buf: %s\n", Receive_Buffer); 
+	}
 	return 0;
 }
+

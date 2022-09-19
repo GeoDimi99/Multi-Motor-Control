@@ -29,10 +29,10 @@ BINS= master.elf slave.elf
 
 # put here the additional .o files you want to generate
 # one .c file for each .o should be present
-OBJS=TWI.o ../avr_common/uart.o
+OBJS=TWI.o ../avr_common/uart.o ../avr_common/uart1.o
 
 # put here the additional header files needed for compilation
-HEADERS= TWI_lib.h ../avr_common/uart.h
+HEADERS= TWI_lib.h ../avr_common/uart.h ../avr_common/uart1.h
 
 
 # the file below contains the actual rules

@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 
 
 #define BAUD 19200
@@ -23,12 +24,6 @@ static volatile unsigned char txTail;
 static volatile unsigned char txBuffer[UART_BUFFER_SIZE];
 static volatile unsigned char rxBuffer[UART_BUFFER_SIZE];
 
-
-//#define SIZE_RX_BUFFER 20
-//#define SIZE_TX_BUFFER 20
-//#define TX_is_empty() ((tx_index + 1) % SIZE_TX_BUFFER == wr_index)
-//#define TX_is_full() ((wr_index + 1) % SIZE_TX_BUFFER == tx_index)
-//#define RX_is_empty() (rd_index == rx_index )
 
 
  

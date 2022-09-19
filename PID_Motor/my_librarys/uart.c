@@ -1,135 +1,62 @@
-/*
- * Copyright (c) 2011-2013 Sebastian Himmler
- * All rights reserved.
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER IN
- * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+#include <util/delay.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <avr/io.h>
 
-#include <avr/interrupt.h>
-#include <avr/pgmspace.h>
+#define BAUD 19200
+#define MYUBRR (F_CPU/16/BAUD-1)
 
-#include "uart.h"
+void UART_init(void){
+  // Set baud rate
+  UBRR0H = (uint8_t)(MYUBRR>>8);
+  UBRR0L = (uint8_t)MYUBRR;
 
+  UCSR0C = (1<<UCSZ01) | (1<<UCSZ00); /* 8-bit data */
+  UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);   /* Enable RX and TX */
 
-void uartInit(uint32_t baudrate)
-{
-	uint8_t ubrr = ((F_CPU + baudrate * 8L) / (baudrate * 16L) - 1);
-
-	// set baudrate register
-	UBRR0H = (unsigned int)(ubrr >> 8);
-	UBRR0L = (unsigned int)(ubrr);
-
-	// enable RX und TX with interrupts
-	UCSR0B |= (1 << RXEN0) | (1 << TXEN0);
-	UCSR0B |= (1 << RXCIE0) | (1 << TXCIE0);
-
-	// set mode 8n1
-	UCSR0C = (3 << UCSZ00);
-
-	// set buffer variables
-	rxHead = 0;
-	rxTail = 0;
-	txHead = 0;
-	txTail = 0;
 }
 
-unsigned char uartGetByte(void)
-{
-	// set local variables
-	unsigned char data;
-	unsigned char tmptail;
+void UART_putChar(uint8_t c){
+  // wait for transmission completed, looping on status bit
+  while ( !(UCSR0A & (1<<UDRE0)) );
 
-	// return if no data is available
-	if(rxHead == rxTail)
-		return (0);
-
-	// calculate data length
-	tmptail = ((rxTail + 1) & UART_BUFFER_MASK);
-	rxTail = tmptail;
-
-	// get data from buffer
-	data = rxBuffer[tmptail];
-
-	// enable rx interrupt
-	UCSR0B |= (1 << RXCIE0);
-
-	return data;
+  // Start transmission
+  UDR0 = c;
 }
 
-void uartSendByte(unsigned char data)
-{
-	// set local variables
-	unsigned char tmphead;
+uint8_t UART_getChar(void){
+  // Wait for incoming data, looping on status bit
+  while( !(UCSR0A & (1<<RXC0)) );
 
-	// calculate new head
-	tmphead = ((txHead + 1) & UART_BUFFER_MASK);
+  // Return the data
+  return UDR0;
 
-	// wait until space in buffer
-	while(tmphead == txTail);
-
-	// save data in buffer
-	txBuffer[tmphead] = data;
-	txHead = tmphead;
-
-	// enable UDRE interrupt to transmit data
-	UCSR0B |= (1 << UDRIE0);
 }
 
-
-ISR
-(USART0_RX_vect)
-{
-	unsigned char data;
-	unsigned char tmphead;
-
-	data = UDR0;
-
-	// calculate new buffer index
-	tmphead = ((rxHead + 1) & UART_BUFFER_MASK);
-
-	// BUFFER OVERFLOW!
-	if (tmphead == rxTail ) {
-
-		// disable rx interrput
-		UCSR0B &= ~(1<<RXCIE0);
-		return;
-	} else {
-
-		// save new index
-		rxHead = tmphead;
-
-		// save data in buffer
-		rxBuffer[tmphead] = data;
-	}
+// reads a string until the first newline or 0
+// returns the size read
+uint8_t UART_getString(uint8_t* buf){
+  uint8_t* b0=buf; //beginning of buffer
+  while(1){
+    uint8_t c=UART_getChar();
+    *buf=c;
+    ++buf;
+    // reading a 0 terminates the string
+    if (c==0)
+      return buf-b0;
+    // reading a \n  or a \r return results
+    // in forcedly terminating the string
+    if(c=='\n'||c=='\r'){
+      *buf=0;
+      ++buf;
+      return buf-b0;
+    }
+  }
 }
 
-ISR
-(USART0_UDRE_vect)
-{
-	unsigned char tmptail;
-
-	if (txHead != txTail) {
-
-		// calculate new buffer
-		tmptail = ((txTail + 1) & UART_BUFFER_MASK);
-		txTail = tmptail;
-
-		// put buffer to Serial Bus
-		UDR0 = txBuffer[tmptail];
-	} else {
-
-		// disable UDR if no data availbale
-		UCSR0B &= ~(1<<UDRIE0);
-	}
+void UART_putString(uint8_t* buf){
+  while(*buf){
+    UART_putChar(*buf);
+    ++buf;
+  }
 }
-

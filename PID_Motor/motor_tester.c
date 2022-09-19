@@ -8,7 +8,7 @@
 #include "my_librarys/uart_int.h"
 
 //Parametri del controllore PID
-#define K_P 0.5f
+#define K_P 0.25f
 #define K_I	0.0f
 #define K_D 0.1f
 
@@ -58,7 +58,7 @@ int main(void){
 		UART_putString(out_str);
 		UART_putChar('\n');
 		
-		_delay_ms(1000);
+		_delay_ms(100);
 		
 	}
 	return 0;

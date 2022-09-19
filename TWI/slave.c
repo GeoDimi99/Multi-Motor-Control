@@ -6,8 +6,8 @@
 #include <string.h>
 #include <avr/interrupt.h>
 #include <string.h>
-#include "../avr_common/uart.h"
-#include "../avr_common/uart1.h"
+//#include "../avr_common/uart.h"
+#include "../avr_common/uart_int.h"
 
 #define SAMPLE_command "sample"
 #define GET_command "get"
@@ -26,33 +26,41 @@ int main(void){
 	uint8_t desired_velocity[velocity_len]= "none";
 
 	while(1){
-		printf("Slave\n"); 
 		
 		TWI_Slave_Receive_Data();     //ricevo comando "sample"
 		
-		printf("Buf: %s\n", Receive_Buffer); 
+		UART_putString(Receive_Buffer);
+		UART_putString("\n");
 		
 		TWI_Slave_Receive_Data();     //ricevo comando "get"
 		
-		printf("Buf: %s\n", Receive_Buffer); 
+		UART_putString(Receive_Buffer);
+		UART_putString("\n");
 		
 		TWI_Slave_Transmit_Data(current_velocity, velocity_len);  //invio velocità
 		
 		TWI_Slave_Receive_Data();       //ricevo comando "set"
 		
-		printf("Buf: %s\n", Receive_Buffer); 
+		UART_putString(Receive_Buffer);
+		UART_putString("\n");
 		
 		TWI_Slave_Receive_Data();           //ricevo desired velocity 
 		
 		strcpy(desired_velocity, Receive_Buffer);   //la salvo 
-		
-		printf("Buf: %s\n", Receive_Buffer);  //ricevo comando "apply"
+		  
+		UART_putString(Receive_Buffer);
+		UART_putString("\n");
 		
 		TWI_Slave_Receive_Data();             //ricevo comando "apply"
 		
+		UART_putString(Receive_Buffer);
+		UART_putString("\n");
+		
 		strcpy(current_velocity, desired_velocity);  //applico la velocità
 		
-		printf("Buf: %s\n", Receive_Buffer); 
+		UART_putString("current_velocity: ");
+		UART_putString(current_velocity);
+		UART_putString("\n");
 	}
 	return 0;
 }

@@ -122,7 +122,7 @@ uint16_t get_angular_position(Motor* mtr) {return mtr->angular_position; }
 
 uint16_t get_angular_velocity(Motor* mtr) {return mtr->angular_velocity; }
 
-uint16_t get_desired_velocity(Motor* mtr) {return mtr->angular_velocity; }
+uint16_t get_desired_velocity(Motor* mtr) {return mtr->desired_velocity; }
 
 uint16_t get_current_pwm(Motor* mtr) {return mtr->current_pwm; }
 

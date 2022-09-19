@@ -19,9 +19,6 @@
 // Definizione dei buffer
 static volatile unsigned char rxHead;
 static volatile unsigned char rxTail;
-static volatile unsigned char txHead;
-static volatile unsigned char txTail;
-static volatile unsigned char txBuffer[UART_BUFFER_SIZE];
 static volatile unsigned char rxBuffer[UART_BUFFER_SIZE];
 
 

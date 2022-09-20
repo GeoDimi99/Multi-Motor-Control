@@ -41,7 +41,7 @@ uint8_t UART_getChar(void){
 	
 	//Return se non c'è dati avviabili
 	//if(rxHead == rxTail) return 0
-	while (rxHead == rxTail);
+	if (rxHead == rxTail) return 0;
 	
 	// Calcolo lunghezza dati
 	tmptail = ((rxTail + 1) & UART_BUFFER_MASK);

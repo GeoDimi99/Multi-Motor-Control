@@ -41,8 +41,6 @@ int main(void){
 	while(1){
 		
 		//Controllo se c'è un input da leggere
-		
-		
 		if(UART_getString(in_str) > 1 ){
 			int vel = atoi(in_str);
 			int dir = vel > 0 ? RIGHT : LEFT ;

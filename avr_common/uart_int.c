@@ -63,6 +63,9 @@ void UART_putChar(uint8_t data){
 	// calculate new head
 	tmphead = ((txHead + 1) & UART_BUFFER_MASK);
 
+	//Controllo se il buffer di trasmisisone del sistema ha spazio
+	//while (!( UCSR0A & (1<<UDRE0))) ;
+	
 	// wait until space in buffer
 	while(tmphead == txTail);
 
@@ -145,7 +148,7 @@ ISR(USART0_UDRE_vect){
 	} else {
 
 		// disable UDR if no data availbale
-		UCSR0B &= ~(1<<UDRIE0);
+		UCSR0B &= ~(1 << TXCIE0);
 	}
 }
 

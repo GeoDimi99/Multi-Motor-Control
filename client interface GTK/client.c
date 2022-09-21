@@ -20,7 +20,7 @@ void show_about(GtkWidget *widget, gpointer data) {
 int main(int argc, char *argv[]) {
 
 	GtkWidget* window, *about_button, *box, *output_box,*right_box, *input_box, *about_box, *textArea, *label_input, *label_output,*logo, *input,
-	                   *set_button, *label_about, *choose_box, *label_choose;
+	                   *set_button, *label_about, *choose_box, *label_choose, *choose_motor;
 	
 	GdkPixbuf *pixbuf_logo = gdk_pixbuf_new_from_file("logo_AVR.png", NULL);
 
@@ -34,15 +34,17 @@ int main(int argc, char *argv[]) {
 	gtk_container_set_border_width(GTK_CONTAINER(window), 15);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 	
-	box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-	output_box = gtk_button_box_new(GTK_ORIENTATION_VERTICAL);
-	right_box = gtk_button_box_new(GTK_ORIENTATION_VERTICAL);
-	input_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-	choose_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
+	box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
+	gtk_box_set_baseline_position (GTK_BOX(box), GTK_BASELINE_POSITION_CENTER);
+	output_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+	right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 50);
+	gtk_box_set_baseline_position (GTK_BOX(right_box), GTK_BASELINE_POSITION_CENTER);
+	input_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+	choose_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
 	about_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
 	
 	gtk_container_add (GTK_CONTAINER (right_box), choose_box);
-	gtk_container_add (GTK_CONTAINER (right_box), input_box);	
+	gtk_container_add (GTK_CONTAINER (right_box), input_box);
 	gtk_container_add (GTK_CONTAINER (right_box), about_box);
 	gtk_container_add (GTK_CONTAINER (box), output_box);
 	gtk_container_add (GTK_CONTAINER (box), right_box);
@@ -63,6 +65,10 @@ int main(int argc, char *argv[]) {
 	
 	label_choose= gtk_label_new ("Choose a motor:");
 	gtk_container_add(GTK_CONTAINER(choose_box), label_choose);
+	choose_motor= gtk_combo_box_text_new ();
+	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(choose_motor), "1", "Motor 1"); 
+	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(choose_motor), "2", "Motor 2"); 
+	gtk_container_add(GTK_CONTAINER(choose_box), choose_motor);
 
 	/////////////////////////////////        TEXT INPUT          //////////////////////////////////////////
 	

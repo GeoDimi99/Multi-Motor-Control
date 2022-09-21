@@ -19,46 +19,76 @@ void show_about(GtkWidget *widget, gpointer data) {
 
 int main(int argc, char *argv[]) {
 
-	GtkWidget* window, *about_button, *about_button_box, *textArea, *scrollbar, *textEntry, *console;
+	GtkWidget* window, *about_button, *box, *output_box,*right_box, *input_box, *about_box, *textArea, *label_input, *label_output,*logo, *input,
+	                   *set_button, *label_about, *choose_box, *label_choose, *choose_motor;
+	
+	GdkPixbuf *pixbuf_logo = gdk_pixbuf_new_from_file("logo_AVR.png", NULL);
 
 	gtk_init(&argc, &argv);
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size(GTK_WINDOW(window), 1000, 700);
-	gtk_window_set_title(GTK_WINDOW(window), "Arduino Multi Motor Control");
+	gtk_window_set_title(GTK_WINDOW(window), "AVR Multi Motor Control");
 
 	gtk_container_set_border_width(GTK_CONTAINER(window), 15);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 	
-	/////////////////////////////////    ABOUT THE PROJECT        ////////////////////////////////////////
+	box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
+	gtk_box_set_baseline_position (GTK_BOX(box), GTK_BASELINE_POSITION_CENTER);
+	output_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+	right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 50);
+	gtk_box_set_baseline_position (GTK_BOX(right_box), GTK_BASELINE_POSITION_CENTER);
+	input_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+	choose_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+	about_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
 	
-	about_button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-	gtk_container_add (GTK_CONTAINER (window), about_button_box);
-	gtk_widget_set_halign (about_button_box,GTK_ALIGN_END);
-	about_button= gtk_button_new_with_label("About the project");
-	g_signal_connect (about_button, "clicked", G_CALLBACK(show_about), (gpointer) window);
-	gtk_container_add (GTK_CONTAINER (about_button_box), about_button);
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	gtk_container_add (GTK_CONTAINER (right_box), choose_box);
+	gtk_container_add (GTK_CONTAINER (right_box), input_box);
+	gtk_container_add (GTK_CONTAINER (right_box), about_box);
+	gtk_container_add (GTK_CONTAINER (box), output_box);
+	gtk_container_add (GTK_CONTAINER (box), right_box);
+	gtk_container_add (GTK_CONTAINER (window), box);
 	
 	
-	//////////////////////////////////        TEXT VIEW       //////////////////////////////////////////////
+	//////////////////////////////////   TEXT VIEW  & LOGO  //////////////////////////////////////////////
+	logo= gtk_image_new_from_pixbuf(pixbuf_logo);
+	gtk_container_add(GTK_CONTAINER(output_box), logo);
+	label_output= gtk_label_new ("Motor velocity,  Motor position:");
+	gtk_container_add(GTK_CONTAINER(output_box), label_output);
 	textArea = gtk_text_view_new();
-    //scrollbar= gtk_scrollbar_new(GTK_ORIENTATION_VERTICAL,gtk_scrollable_get_vadjustment(textArea));
-    //textEntry = gtk_entry_new();
+    gtk_widget_set_size_request(textArea, 600, 500);
+	gtk_container_add(GTK_CONTAINER(output_box), textArea);
+	gtk_text_view_set_editable(GTK_TEXT_VIEW(textArea), 0);
+	
+	/////////////////////////////////      CHOOSE A MOTOR       //////////////////////////////////////////
+	
+	label_choose= gtk_label_new ("Choose a motor:");
+	gtk_container_add(GTK_CONTAINER(choose_box), label_choose);
+	choose_motor= gtk_combo_box_text_new ();
+	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(choose_motor), "1", "Motor 1"); 
+	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(choose_motor), "2", "Motor 2"); 
+	gtk_container_add(GTK_CONTAINER(choose_box), choose_motor);
 
-    //console = gtk_grid_new(); 
-
-    //gtk_grid_attach(GTK_GRID(console), textArea, 0, 1, 0, 1);
-    //gtk_grid_attach(GTK_GRID(console), scrollbar, 1, 2, 0, 1);
-    //gtk_grid_attach(GTK_GRID(console), textEntry, 0, 2, 1, 2);
-    //This code sets the preferred size for the widget, so it does not ask for extra space
-    gtk_widget_set_size_request(textArea, 320, 240);
-	gtk_container_add(GTK_CONTAINER(window), textArea);
-
+	/////////////////////////////////        TEXT INPUT          //////////////////////////////////////////
+	
+	label_input= gtk_label_new ("Set the velocity:");
+	gtk_container_add(GTK_CONTAINER(input_box), label_input);
+	input= gtk_entry_new(); 
+	gtk_container_add (GTK_CONTAINER (input_box), input);
+	set_button=gtk_button_new_with_label("Set");
+	//g_signal_connect (set_button, "clicked", G_CALLBACK(<funzione da chiamare>), NULL);
+	gtk_container_add (GTK_CONTAINER(input_box), set_button);
+	
+	/////////////////////////////////    ABOUT THE PROJECT        ////////////////////////////////////////
+	label_about= gtk_label_new ("Here you can find information:");
+	gtk_container_add(GTK_CONTAINER(about_box), label_about);
+	about_button= gtk_button_new_with_label("about the project");
+	g_signal_connect (about_button, "clicked", G_CALLBACK(show_about), (gpointer) window);
+	gtk_container_add (GTK_CONTAINER (about_box), about_button);
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	gtk_window_set_resizable(GTK_WINDOW(window),FALSE);
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), G_OBJECT(window));
 

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include <string.h>
-//#include "../avr_common/uart.h"
 #include "../avr_common/uart_int.h"
 
 #define velocity_len 10
@@ -15,7 +14,7 @@ int main(void){
 	sei();                                      //abilita le interruzioni globali
 	TWI_Init();                                 //inizializza TWI
 	
-	//uint8_t buf[TRANSMIT_BUFLEN];
+	uint8_t trash[TRANSMIT_BUFLEN];
 	uint8_t input[TRANSMIT_BUFLEN];	
 	uint8_t current_velocity[velocity_len]= "none";         //modificare e mettere lungezza generica
 	uint8_t desired_velocity[velocity_len]= "none";        //modificare e mettere lungezza generica
@@ -30,41 +29,32 @@ int main(void){
 	uint8_t i=0;
 
 	do{
-		        
-		do { TWI_Transmit_Data(sample, 8, 0); } while(TWI_info.error_code != TWI_SUCCESS);        //invio comando "sample"
+		
+		TWI_Transmit_Data(sample, 8, 0);               //invio comando "sample"  
 		                
-		do { TWI_Transmit_Data(get, 5, 0); } while(TWI_info.error_code != TWI_SUCCESS);           //invio comando "get"
+		TWI_Transmit_Data(get, 5, 0);                  //invio comando "get"
 		
-		do { TWI_Read_Data(0x01, velocity_len, 0); } while (TWI_info.error_code != TWI_SUCCESS);  //leggo la velocità corrente //modificare e mettere lungezza generica
-		
-		strcpy(current_velocity, Receive_Buffer); 
+		TWI_Read_Data(0x01, velocity_len, 0);          //leggo la velocità corrente
+		 
+		strcpy(current_velocity, Receive_Buffer);      //salvo la velocità corrente
 				              
-		do { TWI_Transmit_Data(set, 5, 0); } while (TWI_info.error_code != TWI_SUCCESS);       //invio il comando "set"
+		TWI_Transmit_Data(set, 5, 0);                  //invio il comando "set"    
 		
-		strcpy(send_velocity + 1, desired_velocity);
+		strcpy(send_velocity + 1, desired_velocity);       //inserisco la velocità desiderata dentro al buffer da inviare (indirizzo + velocità desiderata)
 		
-		do {TWI_Transmit_Data(send_velocity, velocity_len+1, 0);} while (TWI_info.error_code != TWI_SUCCESS);       //invio la velocità desiderata
+		TWI_Transmit_Data(send_velocity, velocity_len+1, 0);   //invio la velocità desiderata      
 	
-		do {TWI_Transmit_Data(apply, 7, 0);} while (TWI_info.error_code != TWI_SUCCESS);         //invio il comando "apply"
+		TWI_Transmit_Data(apply, 7, 0);                   //invio il comando "apply"
 		
-		strcpy(current_velocity, desired_velocity);
+		strcpy(current_velocity, desired_velocity);         //imposto velocità corrente == velocità desiderata
 		
 		UART_putString("current_velocity: ");
 		UART_putString(current_velocity);
 		UART_putString("\n");
 		
-		/*if (i<TRANSMIT_BUFLEN){
-			input[i]= UART_getChar();
-			if (input[i] == '\0'){
-				strcpy(desired_velocity, input);
-				i=0;
-			}
-			else{ i++;}
-		}
-		else { i=0;}*/
-		
 		UART_putString("Inserire la velocita desiderata...\n");
-		UART_getString(desired_velocity); 
+		UART_getString(desired_velocity);
+		if (*desired_velocity == 0) strcpy(desired_velocity, current_velocity); 
 		
 	}while(1); 
 	

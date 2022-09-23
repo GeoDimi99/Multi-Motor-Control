@@ -29,33 +29,18 @@ int main(void){
 		
 		TWI_Slave_Receive_Data();     //ricevo comando "sample"
 		
-		UART_putString(Receive_Buffer);
-		UART_putString("\n");
-		
 		TWI_Slave_Receive_Data();     //ricevo comando "get"
-		
-		UART_putString(Receive_Buffer);
-		UART_putString("\n");
 		
 		TWI_Slave_Transmit_Data(current_velocity, velocity_len);  //invio velocità
 		
 		TWI_Slave_Receive_Data();       //ricevo comando "set"
 		
-		UART_putString(Receive_Buffer);
-		UART_putString("\n");
-		
 		TWI_Slave_Receive_Data();           //ricevo desired velocity 
 		
-		strcpy(desired_velocity, Receive_Buffer);   //la salvo 
-		  
-		UART_putString(Receive_Buffer);
-		UART_putString("\n");
-		
+		if (*Receive_Buffer != 0) strcpy(desired_velocity, Receive_Buffer);   //la salvo 
+		 
 		TWI_Slave_Receive_Data();             //ricevo comando "apply"
-		
-		UART_putString(Receive_Buffer);
-		UART_putString("\n");
-		
+
 		strcpy(current_velocity, desired_velocity);  //applico la velocità
 		
 		UART_putString("current_velocity: ");

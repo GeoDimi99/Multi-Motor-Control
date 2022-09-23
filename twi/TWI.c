@@ -28,13 +28,16 @@ void Slave_Addr_init(uint8_t SL_addr, uint8_t brd){
 
 
 uint8_t is_TWI_ready(){
-	if (TWI_info.mode == Ready) return 1;
-	else return 0;
+	uint8_t is_ready; 
+	is_ready= TWI_info.mode == Ready;
+	return is_ready;
 }
 
 uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeated_start){
 	if (data_len <= TRANSMIT_BUFLEN){
-		while (!is_TWI_ready() ) { _delay_us(1);}
+		while (!is_TWI_ready() ) { 
+			_delay_us(1);
+		}
 		TWI_info.mode = Initializing;             
 		TWI_info.repeated_start = repeated_start;
 		uint8_t *data = (uint8_t *)TR_data;
@@ -47,8 +50,12 @@ uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeate
 			TWDR = Transmit_Buffer[TB_Index++]; 
 			TWI_Send_Transmit(); 
 		}
-		else{TWI_Send_Start();}
-		while (!is_TWI_ready()){_delay_ms(10);} 
+		else{
+			TWI_Send_Start();
+		}
+		while (!is_TWI_ready()){
+			_delay_us(1);
+		} 
 	}
 	else{ return 1; }
 	return 0;
@@ -56,7 +63,9 @@ uint8_t TWI_Transmit_Data(void *const TR_data, uint8_t data_len, uint8_t repeate
 
 uint8_t TWI_Read_Data(uint8_t SL_addr, uint8_t bytes_to_read, uint8_t repeated_start){
 	if (bytes_to_read < RECEIVE_BUFLEN){
-		while (!is_TWI_ready()) { _delay_us(1);}
+		while (!is_TWI_ready()) { 
+			_delay_us(1);
+		}
 		RB_Index = 0;
 		receive_len = bytes_to_read;
 		uint8_t TR_data[1];
@@ -69,7 +78,9 @@ uint8_t TWI_Read_Data(uint8_t SL_addr, uint8_t bytes_to_read, uint8_t repeated_s
 
 uint8_t TWI_Slave_Transmit_Data(void *const TR_data, uint8_t data_len){
 	if (data_len <= TRANSMIT_BUFLEN){
-		while (!is_TWI_ready()) { _delay_us(1);}
+		while (!is_TWI_ready()) { 
+			_delay_us(1);
+		}
 		TWI_info.mode = Initializing;
 		TB_Index=0;
 		transmit_len=data_len;
@@ -78,18 +89,24 @@ uint8_t TWI_Slave_Transmit_Data(void *const TR_data, uint8_t data_len){
 		for (int i =0; i< data_len; i++){
 			Transmit_Buffer[i]= data[i];
 		}
-		while (!is_TWI_ready()) { _delay_us(1);}
+		while (!is_TWI_ready()) { 
+			_delay_us(1);
+		}
 	}
 	else return 1; 
 	return 0; 
 }
 
 uint8_t TWI_Slave_Receive_Data(){ 
-	while (!is_TWI_ready()) {_delay_us(1);} 
+	while (!is_TWI_ready()) {
+		_delay_us(1);
+	} 
 	TWI_info.mode=Initializing;
 	RB_Index=0;
 	TWI_Set_Address(); 
-	while (!is_TWI_ready()) { _delay_us(1);}
+	while (!is_TWI_ready()) { 
+		_delay_us(1);
+	}
 	return 0; 
 }
 

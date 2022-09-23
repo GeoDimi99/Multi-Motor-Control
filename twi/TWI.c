@@ -3,6 +3,7 @@
 #include "TWI_lib.h"
 #include "util/delay.h"
 #include <stdio.h>
+#include "util/atomic.h"
 #include "../avr_common/uart.h"
 
 void TWI_Init(){
@@ -29,7 +30,9 @@ void Slave_Addr_init(uint8_t SL_addr, uint8_t brd){
 
 uint8_t is_TWI_ready(){
 	uint8_t is_ready; 
-	is_ready= TWI_info.mode == Ready;
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    is_ready = (TWI_info.mode == Ready);
+	}
 	return is_ready;
 }
 

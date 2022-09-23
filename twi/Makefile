@@ -25,7 +25,7 @@
 # to be uploaded on the avr
 # you can add multiple files, they will be all generated
 
-BINS=  slave2.elf #master.elf
+BINS= master.elf  slave1.elf
 
 # put here the additional .o files you want to generate
 # one .c file for each .o should be present
@@ -39,7 +39,7 @@ HEADERS= TWI_lib.h ../avr_common/uart.h ../avr_common/uart_int.h
 
 # !!!!!!!!!!!!!!!! MODIFY HERE !!!!!!!!!!!!!!!! 
 
-include ../avr_common/avr_geo.mk       #avr_sara.mk
+include ../avr_common/avr_sara.mk 
 
 
 

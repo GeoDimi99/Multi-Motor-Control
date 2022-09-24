@@ -5,9 +5,12 @@ make clean
 cat ../avr_common/avr_mk_sara/master.txt > ../avr_common/avr_sara.mk && \
 make && \ 
 make master.hex && \
-cat ../avr_common/avr_mk_sara/slave.txt > ../avr_common/avr_sara.mk && \
+cat ../avr_common/avr_mk_sara/slave1.txt > ../avr_common/avr_sara.mk && \
 make && \
-make slave.hex
+make slave1.hex && \
+cat ../avr_common/avr_mk_sara/slave2.txt > ../avr_common/avr_sara.mk && \
+make && \
+make slave2.hex
 
 
 

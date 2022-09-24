@@ -1,4 +1,32 @@
+#include <string.h>
 #include <gtk/gtk.h>
+
+/*ALBERO DEI CONTENITORI E DEGLI ELEMENTI: 
+	 * window:
+	 *   main_box:
+	 *   	--> mbar 
+	 * 	 		box:
+	 * 				-->left_box
+	 * 			 		- logo
+	 * 			 		- label_output
+	 * 			 		- textArea
+	 * 					--> Serial box
+	 * 						- 
+	 *  -			-->right_box
+	 * 					-->choose_box
+	 * 				 		- label_choose 
+	 * 				 		- combo box (choose_motor)
+	 *          		-->input_box
+	 * 				 		- label_input
+	 * 				 		- input (di tipo entry)
+	 * 				 		- set_button
+	 * 				 		- label_constraint
+	 * 				 		- label_warning
+	 * 			
+	 * 				 
+	 * 				 
+	*/
+
 
 void show_about(GtkWidget *widget, gpointer data) {
 	//creazione di un buffer di pixel, contenente l'immagine 
@@ -27,8 +55,54 @@ void show_about(GtkWidget *widget, gpointer data) {
 
 int main(int argc, char *argv[]) {
 	//dichiarazione di una serie di elementi che andranno a costituire l'interfaccia 
-	GtkWidget* window, *about_button, *box, *output_box,*right_box, *input_box, *about_box, *textArea, *label_input, *label_output,*logo, *input,
-	                   *set_button, *label_about, *choose_box, *label_choose, *choose_motor, *label_constraint, *label_warning, *label_info;
+	// Window (Finestra principale):
+	GtkWidget* window;
+	
+	// IN Window :
+	 GtkWidget *main_box;
+	
+	// IN Main box :
+	GtkWidget* mbar;
+	GtkWidget* box;
+	
+	// IN Box:
+	GtkWidget* left_box;
+	GtkWidget* right_box;
+	
+	// IN Left box:
+	GtkWidget* logo;
+	GtkWidget* label_output;
+	GtkTextBuffer* text_buf = gtk_text_buffer_new(NULL);
+	GtkWidget* textArea;
+	GtkWidget *serial_box;
+	
+	// IN Right box:
+	GtkWidget* input_box;
+	GtkWidget* choose_box;
+	
+	// IN Serial box:
+	GtkWidget* dev_lab;
+	GtkEntryBuffer* dev_buf = gtk_entry_buffer_new("/dev/ttyUSB0", strlen("/dev/ttyUSB0"));
+	GtkWidget* dev_input;
+	GtkWidget* bound_lab;
+	GtkEntryBuffer* bound_buf = gtk_entry_buffer_new("19200", strlen("19200"));
+	GtkWidget* bound_input;
+	GtkWidget* open_button;
+	
+	
+	
+	// IN Choose box:
+	GtkWidget* label_choose;
+	GtkWidget* choose_motor;
+	
+	// IN Input box:
+	GtkWidget* label_input;
+	GtkWidget* input;
+	GtkWidget* set_button;
+	GtkWidget* label_constraint;
+	GtkWidget* label_warning;
+	
+	
 	
 	//creazione di un buffer contenente i pixel del logo
 	GdkPixbuf *pixbuf_logo = gdk_pixbuf_new_from_file("logo_AVR.png", NULL);
@@ -50,18 +124,23 @@ int main(int argc, char *argv[]) {
 	
     //////////////////////////////// MENU BAR //////////////////////////////////////
 	
-	// Creazione della barra del MENU PRINCIPALE
-	GtkWidget* mbar = gtk_menu_bar_new();
+	//Creazione della barra del MENU PRINCIPALE
+	mbar = gtk_menu_bar_new();
 	//Creazione di una box verticale per mettere il menu bar in alto e il resto della
 	//finestra sotto di essa
-	GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL,5);
-	//Aggiungo il mbar al box vbox
+	main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL,5);
+	//Aggiungo il mbar al box main_box
 	gtk_box_pack_start (GTK_BOX(main_box), mbar, TRUE, TRUE, 0);
-	//Inserisco i menu item nella barra
+	////Inserisco un menu item (Settings) nella barra
+	//GtkWidget * settings_mi = gtk_menu_item_new_with_label ("Settings");
+	//gtk_menu_shell_append (GTK_MENU_SHELL (mbar), settings_mi);
+	//Inserisco un menu item (help) nella barra 
 	GtkWidget * help_mi = gtk_menu_item_new_with_label ("Help");
 	gtk_menu_shell_append (GTK_MENU_SHELL (mbar), help_mi);
 	
-	//Crea un SOTTO MENU
+	
+	
+	//Crea un SOTTO MENU (Help)
 	GtkWidget *help_menu = gtk_menu_new ();
 	//Inserisco il sottomenu in un elemento del menu principale
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (help_mi), help_menu);
@@ -74,66 +153,59 @@ int main(int argc, char *argv[]) {
 	gtk_menu_shell_append (GTK_MENU_SHELL (help_menu), about_op);
 	
 	
-	
-	 
-	
+	//Attiviamo l'azione "about"
+	g_signal_connect (about_op, "activate", G_CALLBACK(show_about), (gpointer) window);
 	
 	/////////////////////////////////////////////////////////////////////////////////
 	
 	// si creano e si aggiungono una serie di box che andranno a contenere gli elementi della finestra
-	//gtk_box_new(<disposizione degli elementi>, <spazio tra gli elementi>
+	//gtk_box_new(<disposizione degli elementi>, <spazio tra gli elementi>)
 	
-	/*ALBERO DEI CONTENITORI E DEGLI ELEMENTI: 
-	 * window:
-	 * 	 box:
-	 * 		-->output_box
-	 * 			 - logo
-	 * 			 - label_output
-	 * 			 - textArea
-	 *  -	-->right_box
-	 * 			-->choose_box
-	 * 				 - label_choose 
-	 * 				 - combo box (choose_motor)
-	 *          -->input_box
-	 * 				 - label_input
-	 * 				 - input (di tipo entry)
-	 * 				 - set_button
-	 * 				 - label_constraint
-	 * 				 - label_warning
-	 * 			-->about_box
-	 * 				 - label_about
-	 * 				 - about_button
-	*/
+	
 	box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
 	gtk_box_set_baseline_position (GTK_BOX(box), GTK_BASELINE_POSITION_CENTER);
-	output_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+	left_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+	serial_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,5);
 	right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 50);
 	gtk_widget_set_margin_top (right_box, 200); 
 	gtk_box_set_baseline_position (GTK_BOX(right_box), GTK_BASELINE_POSITION_CENTER);
 	input_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
 	choose_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-	about_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-	gtk_widget_set_margin_top (about_box, 100); 
+	
 	
 	//si aggiungono i container ad altri container seguendo la logica ad albero
 	gtk_container_add (GTK_CONTAINER (right_box), choose_box);
 	gtk_container_add (GTK_CONTAINER (right_box), input_box);
-	gtk_container_add (GTK_CONTAINER (box), output_box);
+	gtk_container_add (GTK_CONTAINER (box), left_box);
 	gtk_container_add (GTK_CONTAINER (box), right_box);
 	gtk_container_add (GTK_CONTAINER (main_box), box );
 	gtk_container_add (GTK_CONTAINER (window), main_box);
 	
 	// segue la construzione dei vari elementi
 	
-	//////////////////////////////////   TEXT VIEW  & LOGO  //////////////////////////////////////////////
+	//////////////////////////////////   LEFT BOX  //////////////////////////////////////////////
 	logo= gtk_image_new_from_pixbuf(pixbuf_logo);
-	gtk_container_add(GTK_CONTAINER(output_box), logo);
+	gtk_container_add(GTK_CONTAINER(left_box), logo);
 	label_output= gtk_label_new ("Motor velocity,  Motor position:");
-	gtk_container_add(GTK_CONTAINER(output_box), label_output);
-	textArea = gtk_text_view_new();
+	gtk_container_add(GTK_CONTAINER(left_box), label_output);
+	textArea = gtk_text_view_new_with_buffer(text_buf);
     gtk_widget_set_size_request(textArea, 600, 500);
-	gtk_container_add(GTK_CONTAINER(output_box), textArea);
-	gtk_text_view_set_editable(GTK_TEXT_VIEW(textArea), 0);
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(textArea), 0);
+	gtk_container_add(GTK_CONTAINER(left_box), textArea);
+	
+	serial_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,5);
+	dev_lab = gtk_label_new ("Dev:");
+	gtk_container_add (GTK_CONTAINER(serial_box), dev_lab);
+	dev_input = gtk_entry_new_with_buffer(dev_buf);
+	gtk_container_add (GTK_CONTAINER(serial_box), dev_input);
+	bound_lab = gtk_label_new ("Boundrate:");
+	gtk_container_add (GTK_CONTAINER(serial_box), bound_lab);
+	bound_input = gtk_entry_new_with_buffer(bound_buf);
+	gtk_container_add (GTK_CONTAINER(serial_box), bound_input);
+	open_button = gtk_button_new_with_label("Open");
+	gtk_container_add (GTK_CONTAINER(serial_box), open_button);
+	gtk_container_add (GTK_CONTAINER(left_box), serial_box);
+	
 	
 	/////////////////////////////////      CHOOSE A MOTOR       //////////////////////////////////////////
 	
@@ -158,15 +230,7 @@ int main(int argc, char *argv[]) {
 	label_warning= gtk_label_new ("Warning: if you go outside this range, the speed will not be applied!");
 	gtk_container_add(GTK_CONTAINER(right_box), label_warning);
 	
-	/////////////////////////////////    ABOUT THE PROJECT        ////////////////////////////////////////
-	//label_about= gtk_label_new ("Here you can find information:");
-	//gtk_container_add(GTK_CONTAINER(about_box), label_about);
-	//about_button= gtk_button_new_with_label("about the project");
-	g_signal_connect (about_op, "activate", G_CALLBACK(show_about), (gpointer) window);
-	//gtk_container_add (GTK_CONTAINER (about_box), about_button);
-	//gtk_container_add (GTK_CONTAINER (right_box), about_box);
-	
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	//si imposta la dimensione statica statica 
 	gtk_window_set_resizable(GTK_WINDOW(window),FALSE);

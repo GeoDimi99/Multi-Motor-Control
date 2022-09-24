@@ -29,7 +29,27 @@ int main(void){
 	
 	uint8_t i=0;
 
-	do{
+	while(1){
+		
+		UART_putString("Inserire in motore [1/2]:\n");
+		UART_getString(input);
+		if (!strcmp(input, "1")){
+			addr=0x01;
+			get[0]= (0x01 << 1) | 0x00;
+			set[0]= (0x01 << 1) | 0x00;
+			send_velocity[0]= (0x01 << 1) | 0x00;
+		}
+		else{
+			addr=0x02;
+			get[0]= (0x02 << 1) | 0x00;
+			set[0]= (0x02 << 1) | 0x00;
+			send_velocity[0]= (0x02 << 1) | 0x00;
+		}
+		
+		UART_putString("Inserire la velocita desiderata...\n");
+		UART_getString(desired_velocity);
+		if (*desired_velocity == 0) strcpy(desired_velocity, current_velocity); 
+		
 		
 		TWI_Transmit_Data(sample, 8, 0);               //invio comando "sample"  
 		                
@@ -53,26 +73,7 @@ int main(void){
 		UART_putString(current_velocity);
 		UART_putString("\n");
 		
-		UART_putString("Inserire in motore [1/2]:\n");
-		UART_getString(input);
-		if (!strcmp(input, "1")){
-			addr=0x01;
-			get[0]= (0x01 << 1) | 0x00;
-			set[0]= (0x01 << 1) | 0x00;
-			send_velocity[0]= (0x01 << 1) | 0x00;
-		}
-		else{
-			addr=0x02;
-			get[0]= (0x02 << 1) | 0x00;
-			set[0]= (0x02 << 1) | 0x00;
-			send_velocity[0]= (0x02 << 1) | 0x00;
-		}
-		
-		UART_putString("Inserire la velocita desiderata...\n");
-		UART_getString(desired_velocity);
-		if (*desired_velocity == 0) strcpy(desired_velocity, current_velocity); 
-		
-	}while(1); 
+	}
 	
 	return 0;
 

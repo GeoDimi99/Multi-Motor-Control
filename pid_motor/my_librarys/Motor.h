@@ -7,7 +7,7 @@
 #include "encoder.h"
 #include "timer.h"
 
-#define LOOP_TIMING 10
+#define LOOP_TIMING 100
 
 
 typedef enum {OPEN_LOOP, CLOSE_LOOP} ctrtype_t;
@@ -22,6 +22,7 @@ typedef struct{
 	uint8_t current_pwm;
 	float error;
 	dir_t direction;
+	float integral_error;
 	
 	// Variabili di controllo
 	float Kp;

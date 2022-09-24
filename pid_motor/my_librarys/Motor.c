@@ -64,13 +64,13 @@ void set_desired_velocity(Motor* mtr, uint16_t desired_velocity, dir_t direction
 void spin_once(Motor* mtr){
 	uint16_t curr_pos = encoder_read();				// Lettura posizione corrente
 	uint16_t prev_pos = mtr->angular_position;		// Lettura posizione precedente
-
-	float curr_vel = (curr_pos - prev_pos)/LOOP_TIMING;
+    int16_t delta = curr_pos - prev_pos; 
+	float curr_vel = delta / LOOP_TIMING;
 	float des_vel = mtr->desired_velocity;
 	
 	float curr_err = des_vel - curr_vel;			// Calcolo dell'errore
 	//printf("curr err %d\n", (int)curr_err);
-	mtr-> angular_position = curr_pos;				// Setto posizione attuale
+	mtr->angular_position = curr_pos;				// Setto posizione attuale
 	mtr->angular_velocity = curr_vel; 				// Setto velocita attuale
 	
 	
@@ -89,18 +89,18 @@ void spin_once(Motor* mtr){
 			
 		case CLOSE_LOOP:
 			// Caso : Controllore ad anello chiuso
-			mtr->u_d = mtr->Kd * (curr_err - mtr->error) / LOOP_TIMING; 	//Calcolo della componente derivativa
-			mtr->u_i += mtr->Ki * curr_err * LOOP_TIMING ;					//Calcolo della componente integrativa
-			mtr->u_p = mtr->Kp * curr_err;									//Calcolo della componente proporzionale
+			mtr->u_d = (curr_err - mtr->error) / LOOP_TIMING; 	//Calcolo della componente derivativa
+			mtr->integral_error += curr_err;						//Calcolo della componente integrativa
+			mtr->u_p = curr_err;									//Calcolo della componente proporzionale
 			 
 			float u_tot = mtr->current_pwm;
-			u_tot += mtr->u_d + mtr->u_i + mtr->u_p; 						//Settiamo l'intensità della pwm corrente
+			u_tot += mtr->u_d + mtr->integral_error + mtr->u_p; 						//Settiamo l'intensità della pwm corrente
 			
 			//Controllo del range dell'ingresso dell'onda quadra
-			if      (u_tot < 0.0f) mtr->current_pwm = 0;
-			else if (u_tot > 255.0f) mtr->current_pwm = 255;
-			else                     mtr->current_pwm = (int) u_tot;
-			 
+			//if      (u_tot < 0.0f) mtr->current_pwm = 0;
+			//else if (u_tot > 255.0f) mtr->current_pwm = 255;
+			//else                     mtr->current_pwm = (int) u_tot;
+			mtr->current_pwm = (int) u_tot ; 
 			mtr->error = curr_err;
 			 
 			digit_write(dir_pin,1);							//Settiamo la direzione motore
@@ -111,6 +111,11 @@ void spin_once(Motor* mtr){
 	
 }
 
+int16_t clamp(int16_t input_val, int16_t range_max, int16_t range_min){
+	if(input_val > range_max) return range_max;
+	else if(input_val < range_min) return range_min;
+	else return input_val;
+}
 
 float get_Kp(Motor* mtr){ return mtr->Kp; }
 

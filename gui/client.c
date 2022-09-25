@@ -1,5 +1,6 @@
 #include <string.h>
 #include <gtk/gtk.h>
+#include <pthread.h>
 #include "serial_linux.h"
 
 /*ALBERO DEI CONTENITORI E DEGLI ELEMENTI: 
@@ -30,39 +31,80 @@
 	*/
 	
 // Window (Finestra principale):
-	
+
 GtkWidget* window;
+
+GtkWidget* open_button; 
+
+void* output(void * arg){
+	const int bsize=10;
+	char buf[bsize];
+	while (1) {
+		int n_read=read(fd, buf, bsize);
+		for (int i=0; i<n_read; ++i) {
+		  printf("%c", buf[i]);
+		}
+	}
+}
 	
 void open_serial(GtkWidget *widget, gpointer data){
-	GtkWidget *dialog;
-	const char**  args= (const char**)data; 
-	const char* filename= args[0];
-	int baudrate=atoi(args[1]);
-	int fd= serial_open(filename);
-	if (fd<=0) {
+	if (!strcmp(gtk_button_get_label(GTK_BUTTON(open_button)), "Open")){
+		GtkWidget *dialog;
+		const char**  args= (const char**)data; 
+		const char* filename= args[0];
+		int baudrate=atoi(args[1]);
+		int fd= serial_open(filename);
+		if (fd<=0) {
+			dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+				GTK_MESSAGE_ERROR,
+				GTK_BUTTONS_CLOSE, "Error opening serial device [%s] ... \n", filename);
+			gtk_window_set_title(GTK_WINDOW(dialog), "Error input device");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			return;
+		} 
+		int attribs= serial_set_interface_attribs(fd, baudrate, 0);
+		if (attribs) {
+			dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+				GTK_MESSAGE_ERROR,
+				GTK_BUTTONS_CLOSE, "Error setting baudrate [%d] ... \n", baudrate);
+			gtk_window_set_title(GTK_WINDOW(dialog), "Error input baudrate");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			return;
+		}
+		serial_set_blocking(fd, 1);
 		dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_ERROR,
-            GTK_BUTTONS_CLOSE,
-            "Error opening serial device [%s] ... \n", filename);
-		gtk_window_set_title(GTK_WINDOW(dialog), "Error input device");
-		gtk_dialog_run(GTK_DIALOG(dialog));
-		gtk_widget_destroy(dialog);
-		return;
-	} 
-	int attribs= serial_set_interface_attribs(fd, baudrate, 0);
-	if (attribs) {
-		dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-            GTK_DIALOG_DESTROY_WITH_PARENT,
-            GTK_MESSAGE_ERROR,
-            GTK_BUTTONS_CLOSE,
-            "Error setting baudrate [%d] ... \n", baudrate);
-		gtk_window_set_title(GTK_WINDOW(dialog), "Error input device");
-		gtk_dialog_run(GTK_DIALOG(dialog));
-		gtk_widget_destroy(dialog);
-		return;
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+				GTK_MESSAGE_OTHER,
+				GTK_BUTTONS_CLOSE,"Serial opened! ... \n");
+			gtk_window_set_title(GTK_WINDOW(dialog), "Success");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+		gtk_button_set_label (GTK_BUTTON(open_button), "Close"); 
+		
+		///// OUTPUT ///// --->occorre lanciarlo in un thread separato
+		pthread_t thread;
+		int* arg= malloc(sizeof(int)); 
+		*arg=fd; 
+		if (!pthread_create(&thread, NULL, output,(void*)arg)){
+			dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+				GTK_MESSAGE_ERROR,
+				GTK_BUTTONS_CLOSE, "An error occurred \n", baudrate);
+			gtk_window_set_title(GTK_WINDOW(dialog), "Error output");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			gtk_button_set_label (GTK_BUTTON(open_button), "Open")
+			return;
+		}
 	}
-	serial_set_blocking(fd, 1);
+	else{
+		gtk_button_set_label (GTK_BUTTON(open_button), "Open"); 
+		///p_thread cancel
+	}
 }
 
 
@@ -118,12 +160,11 @@ int main(int argc, char *argv[]) {
 	
 	// IN Serial box:
 	GtkWidget* dev_lab;
-	GtkEntryBuffer* dev_buf = gtk_entry_buffer_new("/dev/ttyUSB0", strlen("/dev/ttyUSB0"));
+	GtkEntryBuffer* dev_buf = gtk_entry_buffer_new("/dev/ttyACM0", strlen("/dev/ttyACM0"));
 	GtkWidget* dev_input;
 	GtkWidget* baud_lab;
 	GtkEntryBuffer* baud_buf = gtk_entry_buffer_new("19200", strlen("19200"));
 	GtkWidget* baud_input;
-	GtkWidget* open_button;
 	
 	// IN Input box:
 	GtkWidget* input1_box; 
@@ -135,8 +176,6 @@ int main(int argc, char *argv[]) {
 	GtkWidget* set_box;
 	GtkWidget* set_button;
 	GtkWidget* label_constraint;
-	
-	
 	
 	//creazione di un buffer contenente i pixel del logo
 	GdkPixbuf *pixbuf_logo = gdk_pixbuf_new_from_file("logo_AVR.png", NULL);

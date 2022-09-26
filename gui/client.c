@@ -32,6 +32,8 @@
 	
 // Window (Finestra principale):
 
+#define bsize 20
+
 pthread_t thread;
 
 GtkWidget* window;
@@ -43,17 +45,22 @@ GtkTextBuffer* text_buf;
 GtkTextIter iter; 
 ////////////////////////////////////////////////////////
 
+gboolean append_char(gpointer user_data){
+	const char* buffer= (char*)user_data; 
+	gtk_text_buffer_get_end_iter(text_buf, &iter); 
+	gtk_text_buffer_insert(text_buf, &iter, buffer, -1); 
+	return G_SOURCE_REMOVE; 
+}
+
 void* output(void * arg){
 	int fd = *((int*)arg); 
-	const int bsize=10;
-	char buf[bsize];
+	char* buf= (char*) malloc(sizeof(char)*bsize); 
 	while (1) {
-		int n_read=read(fd, buf, bsize);
-		for (int i=0; i<n_read; ++i) {
-			gtk_text_buffer_get_end_iter(text_buf, &iter); 
-			gtk_text_buffer_insert(text_buf, &iter, (const char*) buf + i, 1); 
-		}
+		int n_read=read(fd, buf, bsize-1);
+		*(buf + n_read)= '\0';  
+		g_idle_add(append_char, buf); 
 	}
+	free(buf); 
 }
 	
 void open_serial(GtkWidget *widget, gpointer data){

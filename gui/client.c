@@ -4,35 +4,6 @@
 #include <semaphore.h>
 #include "serial_linux.h"
 
-/*ALBERO DEI CONTENITORI E DEGLI ELEMENTI: 
-	 * window:
-	 *   main_box:
-	 *   	--> mbar 
-	 * 	 	--> box:
-	 * 				-->left_box
-	 * 			 		- logo
-	 * 			 		- label_output
-	 * 			 		- textArea
-	 * 					--> Serial box
-	 * 						- 
-	 *  -			-->right_box
-	 *          		-->input_box
-	 * 						-->input1_box
-	 * 				 			- label_input_1
-	 * 				 			- input_1 (di tipo entry)
-	 * 						-->input2_box
-	 * 				 			- label_input_2
-	 * 				 			- input_2 (di tipo entry)
-	 *						-->set_box
-	 * 				 			- set_button
-	 * 				 		- label_constraint
-	 * 			
-	 * 				 
-	 * 				 
-	*/
-	
-// Window (Finestra principale):
-
 #define bsize 20
 
 pthread_t thread;
@@ -42,30 +13,44 @@ GtkWidget* window;
 
 GtkWidget* open_button; 
 
-//variabili condivise necessarie per realizzare l'output
+//variabili globali necessarie per realizzare l'output
 GtkTextBuffer* text_buf; 
 GtkTextIter iter; 
 char* buf; 
 int fd; 
-////////////////////////////////////////////////////////
 
-gboolean append_char(gpointer user_data){
+//variabili globali necessarie per realizzare l'input
+GtkEntryBuffer* buf_input1;
+GtkEntryBuffer* buf_input2;
+
+
+
+gboolean append_text(gpointer user_data){                    //inserisce del testo in coda alla text area
 	gtk_text_buffer_get_end_iter(text_buf, &iter); 
 	gtk_text_buffer_insert(text_buf, &iter, buf, -1); 
 	sem_post(&sem);
 	return G_SOURCE_REMOVE; 
 }
 
-void* output(void * arg){ 
+void* output(void * arg){                                  //funzione chiamata in un thread separato
 	while (1) {
 		int n_read=read(fd, buf, bsize-1); 
 		*(buf + n_read)= '\0';  
-		g_idle_add(append_char, NULL); 
+		g_idle_add(append_text, NULL);                    //chiama la funzione append text nel thread main
 		sem_wait(&sem); 
 	}
 }
-	
-void open_serial(GtkWidget *widget, gpointer data){
+
+void input(GtkWidget *widget, gpointer data){                     //gestore del bottone Set, invia l'input
+	int len_1= gtk_entry_buffer_get_length(buf_input1); 
+	int len_2= gtk_entry_buffer_get_length(buf_input2); 
+	const char* vel_1= gtk_entry_buffer_get_text(buf_input1);
+	const char* vel_2= gtk_entry_buffer_get_text(buf_input2);
+	write(fd, vel_1, len_1+1);                                     //non sono sicura di questo
+	write(fd, vel_2, len_2+1);                                     //non sono sicura di questo 
+}
+
+void open_serial(GtkWidget *widget, gpointer data){        //gestore del bottone per aprire e chiudere la seriale 
 	GtkWidget *dialog;
 	if (!strcmp(gtk_button_get_label(GTK_BUTTON(open_button)), "Open")){
 		const char**  args= (const char**)data; 
@@ -132,7 +117,7 @@ void show_about(GtkWidget *widget, gpointer data) {
 	const char* authors[]={ "Georgi Dimitrov", "Sara Attiani", NULL}; 
 	gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(dialog), authors);
 	gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(dialog), "Version 0.0"); 
-	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog), "Arduino Multi Motor Control è un progetto per il controllo simultaneo di motori dc. Il controllo viene effettuato attraverso un processo master che si interfaccia con vari processi slave controllori, comunicandovi attraverso protocollo TWI.");
+	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog), "Arduino Multi Motor Control is a project made for controlling multiple dc motors. That is realized by having a master process which comuncate with some slave processes, using TWI protocol (implementation of I2C).");
 	gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
 	g_object_unref(pixbuf), pixbuf = NULL;
 	gtk_dialog_run(GTK_DIALOG (dialog));
@@ -144,7 +129,7 @@ void show_help(GtkWidget *widget, gpointer data) {
 	GtkWidget *dialog = gtk_about_dialog_new();
 	gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG(dialog), "AVR Multi Motor Control");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
-	"ISTRUZIONI D'USO: \n \n  -Aprire la connessione con il dispositivo AVR master impostando il path del dispositivo e la banda \n \n- Impostare la velocità desiderata per i motori ed applicarla premendo il tasto 'Set' \n \n Warning!: il range della velocità deve essere nell'intervallo [-300, +300]. Tentativi di applicare velocità fuori dal range consentito verranno ignorati.");
+	"USE INSTRUCTIONS: \n \n  -Open a connection with your AVR device by setting it's path and it's baudrate \n \n- Set the desired speed for your motors and click on the 'Set' button \n \n Warning!: the speed range must fall into [-300, +300]. Attempts to set the speed out of range will be ignored.");
 	gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
 	g_object_unref(pixbuf), pixbuf = NULL;
 	gtk_dialog_run(GTK_DIALOG (dialog));
@@ -196,6 +181,8 @@ int main(int argc, char *argv[]) {
 	GtkWidget* label_input_2;
 	GtkWidget* input_1;
 	GtkWidget* input_2;
+	//buf_input1 variabile globale 
+	//buf_input2 variabile globale
 	GtkWidget* set_box;
 	GtkWidget* set_button;
 	GtkWidget* label_constraint;
@@ -316,15 +303,19 @@ int main(int argc, char *argv[]) {
 	
 	label_input_1= gtk_label_new ("Motor 1:");
 	gtk_container_add(GTK_CONTAINER(input1_box), label_input_1);
-	input_1= gtk_entry_new(); 
+	buf_input1= gtk_entry_buffer_new("100", strlen("100"));
+	gtk_entry_buffer_set_max_length(buf_input1, 5);
+	buf_input2= gtk_entry_buffer_new("100", strlen("100"));
+	gtk_entry_buffer_set_max_length(buf_input2, 5);
+	input_1= gtk_entry_new_with_buffer(buf_input1); 
 	gtk_container_add (GTK_CONTAINER (input1_box), input_1);
 	label_input_2= gtk_label_new ("Motor 2:");
 	gtk_container_add(GTK_CONTAINER(input2_box), label_input_2);
-	input_2= gtk_entry_new(); 
+	input_2= gtk_entry_new_with_buffer(buf_input2); 
 	gtk_container_add (GTK_CONTAINER (input2_box), input_2);
 	set_button=gtk_button_new_with_label("Set");
 	gtk_container_add (GTK_CONTAINER(set_box), set_button);
-	//g_signal_connect (set_button, "clicked", G_CALLBACK(<funzione da chiamare>), NULL);
+	g_signal_connect (set_button, "clicked", G_CALLBACK(input), NULL);
 	label_constraint= gtk_label_new ("Speed range: [-300, +300]");
 	gtk_container_add(GTK_CONTAINER(right_box), label_constraint);
 	

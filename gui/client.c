@@ -43,24 +43,25 @@ GtkWidget* open_button;
 //variabili condivise necessarie per realizzare l'output
 GtkTextBuffer* text_buf; 
 GtkTextIter iter; 
+char* buf; 
+int fd; 
 ////////////////////////////////////////////////////////
 
 gboolean append_char(gpointer user_data){
-	const char* buffer= (char*)user_data; 
+	const char* buffer= (const char*)user_data; 
 	gtk_text_buffer_get_end_iter(text_buf, &iter); 
 	gtk_text_buffer_insert(text_buf, &iter, buffer, -1); 
 	return G_SOURCE_REMOVE; 
 }
 
-void* output(void * arg){
-	int fd = *((int*)arg); 
-	char* buf= (char*) malloc(sizeof(char)*bsize); 
+void* output(void * arg){ 
 	while (1) {
+		buf= (char*) malloc(sizeof(char)*bsize); 
 		int n_read=read(fd, buf, bsize-1);
 		*(buf + n_read)= '\0';  
+		printf("%s", buf); 
 		g_idle_add(append_char, buf); 
 	}
-	free(buf); 
 }
 	
 void open_serial(GtkWidget *widget, gpointer data){
@@ -69,7 +70,7 @@ void open_serial(GtkWidget *widget, gpointer data){
 		const char**  args= (const char**)data; 
 		const char* filename= args[0];
 		int baudrate=atoi(args[1]);
-		int fd= serial_open(filename);
+		fd= serial_open(filename);
 		if (fd<=0) {
 			dialog = gtk_message_dialog_new(GTK_WINDOW(window),
 				GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -101,9 +102,7 @@ void open_serial(GtkWidget *widget, gpointer data){
 			gtk_widget_destroy(dialog);
 		
 		///// OUTPUT ///// --->occorre lanciarlo in un thread separato
-		int* arg= malloc(sizeof(int)); 
-		*arg=fd; 
-		if (pthread_create(&thread, NULL, output,(void*)arg)){
+		if (pthread_create(&thread, NULL, output,NULL)){
 			dialog = gtk_message_dialog_new(GTK_WINDOW(window),
 				GTK_DIALOG_DESTROY_WITH_PARENT,
 				GTK_MESSAGE_ERROR,
@@ -127,6 +126,7 @@ void open_serial(GtkWidget *widget, gpointer data){
 			return;
 		}
 		gtk_button_set_label (GTK_BUTTON(open_button), "Open"); 
+		close(fd); 
 	}
 }
 

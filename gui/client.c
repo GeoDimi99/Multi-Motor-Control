@@ -32,24 +32,33 @@
 	
 // Window (Finestra principale):
 
+pthread_t thread;
+
 GtkWidget* window;
 
 GtkWidget* open_button; 
 
+//variabili condivise necessarie per realizzare l'output
+GtkTextBuffer* text_buf; 
+GtkTextIter iter; 
+////////////////////////////////////////////////////////
+
 void* output(void * arg){
+	int fd = *((int*)arg); 
 	const int bsize=10;
 	char buf[bsize];
 	while (1) {
 		int n_read=read(fd, buf, bsize);
 		for (int i=0; i<n_read; ++i) {
-		  printf("%c", buf[i]);
+			gtk_text_buffer_get_end_iter(text_buf, &iter); 
+			gtk_text_buffer_insert(text_buf, &iter, (const char*) buf + i, 1); 
 		}
 	}
 }
 	
 void open_serial(GtkWidget *widget, gpointer data){
+	GtkWidget *dialog;
 	if (!strcmp(gtk_button_get_label(GTK_BUTTON(open_button)), "Open")){
-		GtkWidget *dialog;
 		const char**  args= (const char**)data; 
 		const char* filename= args[0];
 		int baudrate=atoi(args[1]);
@@ -83,27 +92,34 @@ void open_serial(GtkWidget *widget, gpointer data){
 			gtk_window_set_title(GTK_WINDOW(dialog), "Success");
 			gtk_dialog_run(GTK_DIALOG(dialog));
 			gtk_widget_destroy(dialog);
-		gtk_button_set_label (GTK_BUTTON(open_button), "Close"); 
 		
 		///// OUTPUT ///// --->occorre lanciarlo in un thread separato
-		pthread_t thread;
 		int* arg= malloc(sizeof(int)); 
 		*arg=fd; 
-		if (!pthread_create(&thread, NULL, output,(void*)arg)){
+		if (pthread_create(&thread, NULL, output,(void*)arg)){
 			dialog = gtk_message_dialog_new(GTK_WINDOW(window),
 				GTK_DIALOG_DESTROY_WITH_PARENT,
 				GTK_MESSAGE_ERROR,
-				GTK_BUTTONS_CLOSE, "An error occurred \n", baudrate);
+				GTK_BUTTONS_CLOSE, "An error occurred opening thread...\n");
 			gtk_window_set_title(GTK_WINDOW(dialog), "Error output");
 			gtk_dialog_run(GTK_DIALOG(dialog));
 			gtk_widget_destroy(dialog);
-			gtk_button_set_label (GTK_BUTTON(open_button), "Open")
 			return;
 		}
+		gtk_button_set_label (GTK_BUTTON(open_button), "Close"); 
 	}
 	else{
+		if (pthread_cancel(thread)){
+			dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+				GTK_MESSAGE_ERROR,
+				GTK_BUTTONS_CLOSE, "An error occurred deleting thread ...\n");
+			gtk_window_set_title(GTK_WINDOW(dialog), "Error output");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			return;
+		}
 		gtk_button_set_label (GTK_BUTTON(open_button), "Open"); 
-		///p_thread cancel
 	}
 }
 
@@ -136,6 +152,8 @@ void show_help(GtkWidget *widget, gpointer data) {
 
 int main(int argc, char *argv[]) {
 	
+	//window variabile globale
+	
 	// IN Window :
 	 GtkWidget *main_box;
 	
@@ -150,8 +168,8 @@ int main(int argc, char *argv[]) {
 	// IN Left box:
 	GtkWidget* logo;
 	GtkWidget* label_output;
-	GtkTextBuffer* text_buf = gtk_text_buffer_new(NULL);
 	GtkWidget* textArea;
+	text_buf = gtk_text_buffer_new(NULL);
 	GtkWidget *serial_box;
 	
 	// IN Right box:
@@ -165,6 +183,7 @@ int main(int argc, char *argv[]) {
 	GtkWidget* baud_lab;
 	GtkEntryBuffer* baud_buf = gtk_entry_buffer_new("19200", strlen("19200"));
 	GtkWidget* baud_input;
+	//open_button variabile globale
 	
 	// IN Input box:
 	GtkWidget* input1_box; 

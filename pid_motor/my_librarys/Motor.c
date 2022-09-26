@@ -1,16 +1,21 @@
 
 #include "Motor.h"
 
-// Definizione del comportamento del vettore dei interrupt, cosa deve fare l'ISR:
 
-
+float clamp(float input_val, float range_max){
+	if(input_val > range_max) 		  
+		return  range_max;
+	else if(input_val < -range_max) 
+		return -range_max;
+	else 													  
+		return input_val;
+}
 
 // Definizione delle funzioni riguardanti il motore:
 
 Motor* Motor_init(float K_p, float K_i, float K_d){
 	
 	//Inizzializzazione di tools indispensabili per il motore
-	digit_init();		// Controllo della direzione del motore
 	pwm_init();			// Controllo generatore d'onda PWM
 	encoder_init();		// Lettura dello stato corrente
 	timer5_init(LOOP_TIMING);	// Controllo di eventi con intervalli di tempo regolari
@@ -22,13 +27,25 @@ Motor* Motor_init(float K_p, float K_i, float K_d){
 	mtr->Kp = K_p;
 	mtr->Ki = K_i;
 	mtr->Kd = K_d;
+	mtr->max_error = 20.f;
+	mtr->max_error_integral = 50.f;
+
+	// Inizializzazione di parametri 
+	mtr->angular_velocity = 0;
+	mtr->angular_position = 0;
+	mtr->desired_velocity = 0;
+	mtr->error = 0;
+	mtr->dira = 4;
+	mtr->dirb = 5;
 	
 	// Inizializzazione dell'intensità a zero
-	mtr->u_d = 0;
-	mtr->u_i = 0;
-	mtr->u_p = 0;
 	mtr->current_pwm = 0;
-	mtr->error = 0; 
+	mtr->error_acc = 0;
+	
+	//Setto in ouput i registri per la direzione del motore
+	DigIO_REGE_setDirection(mtr->dira,1);
+	DigIO_REGE_setDirection(mtr->dirb,1);
+	
 	
 	return mtr;
 	
@@ -51,85 +68,75 @@ void set_type_controller(Motor* mtr, ctrtype_t type_controller){
 
 
 
-void set_desired_velocity(Motor* mtr, uint16_t desired_velocity, dir_t direction){
-	
-	//Controllo del verso della velocità
-	mtr->direction = direction;
+void set_desired_velocity(Motor* mtr, uint16_t desired_velocity){
 	
 	//Imposto la velocità desiderata
 	mtr->desired_velocity = desired_velocity;
 	
 }
 
+
 void spin_once(Motor* mtr){
-	uint16_t curr_pos = encoder_read();				// Lettura posizione corrente
+	uint16_t curr_pos = encoder_read();						// Lettura posizione corrente
 	uint16_t prev_pos = mtr->angular_position;		// Lettura posizione precedente
-    int16_t delta = curr_pos - prev_pos; 
-	float curr_vel = delta / LOOP_TIMING;
-	float des_vel = mtr->desired_velocity;
 	
-	float curr_err = des_vel - curr_vel;			// Calcolo dell'errore
-	//printf("curr err %d\n", (int)curr_err);
+	//Calcoliamo la velocità misurata
+	int16_t curr_vel = curr_pos - prev_pos;
+	int16_t des_vel = mtr->desired_velocity;
+	
+	
 	mtr->angular_position = curr_pos;				// Setto posizione attuale
 	mtr->angular_velocity = curr_vel; 				// Setto velocita attuale
 	
-	
-	uint8_t dir_pin = (mtr->direction) ? (1 << 4) : (1 << 5);
-	
-	
 	switch(mtr->type_controller){
+		
+			
+		case CLOSE_LOOP:;
+			// Caso : Controllore ad anello chiuso
+			
+			// Calcolo dell'errore e lo limitiamo in un intervallo per fare un ingresso a rampa
+			// per evitare che il controllore sia instabile all'inizio. 
+			float prev_err = mtr->error;
+			float curr_err = curr_vel - des_vel;
+				curr_err = clamp(curr_err, mtr->max_error);
+				mtr->error = curr_err;
+			
+			//Calcolo dell'ingresso integrale, con un range massimo per anti wind up
+			mtr->error_acc = clamp(mtr->error_acc + mtr->Ki * curr_err, mtr->max_error_integral);
+			float u_i = mtr->error_acc;
+			
+			//Calcoliamo ingresso derivato4
+			float u_d = mtr->Kd * (curr_err - prev_err);
+			
+			//Calcoliamo ingresso proporzionale
+			float u_p = mtr->Kp * curr_err;
+			
+			// Limitiamo l' onda quadra tra +- 255
+			mtr->current_pwm =(int16_t) clamp(mtr->current_pwm + u_i + u_d + u_p, 255.); //Settiamo l'intensità della pwm corrente 
+			
+			break;
+			
+			 
 		case OPEN_LOOP:
 			// Caso : Controllore ad anello aperto
-			digit_write(dir_pin,1);					//Settiamo la direzione
-			pwm_set_intensity(des_vel);				//Settiamo l'intensità di velocita
-			
-			mtr->current_pwm = des_vel;				//Settiamo la pwm come l'intensita di velocita desiderata
-			mtr->error = 0;							//Imponiamo l'errore pari a zero
-			break;
-			
-		case CLOSE_LOOP:
-			// Caso : Controllore ad anello chiuso
-			mtr->u_d = (curr_err - mtr->error) / LOOP_TIMING; 	//Calcolo della componente derivativa
-			mtr->integral_error += curr_err;						//Calcolo della componente integrativa
-			mtr->u_p = curr_err;									//Calcolo della componente proporzionale
-			 
-			float u_tot = mtr->current_pwm;
-			u_tot += mtr->u_d + mtr->integral_error + mtr->u_p; 						//Settiamo l'intensità della pwm corrente
-			
-			//Controllo del range dell'ingresso dell'onda quadra
-			//if      (u_tot < 0.0f) mtr->current_pwm = 0;
-			//else if (u_tot > 255.0f) mtr->current_pwm = 255;
-			//else                     mtr->current_pwm = (int) u_tot;
-			mtr->current_pwm = (int) u_tot ; 
-			mtr->error = curr_err;
-			 
-			digit_write(dir_pin,1);							//Settiamo la direzione motore
-			pwm_set_intensity(mtr->current_pwm);			//Settiamo l'intensitàd di velocita 
-			 
-			break;
+			mtr->current_pwm = (int16_t) des_vel;
+												
+			break;	
 	}
 	
+	//  Controlo comand per il controllo dell'hardware
+	if(mtr->current_pwm < 0){
+		DigIO_REGE_setValue(mtr->dira, 1);
+		DigIO_REGE_setValue(mtr->dirb, 0);
+	}
+	else{
+		DigIO_REGE_setValue(mtr->dira, 0);
+		DigIO_REGE_setValue(mtr->dirb, 1);
+	}
+	
+	pwm_set_intensity(abs(mtr->current_pwm));
 }
 
-int16_t clamp(int16_t input_val, int16_t range_max, int16_t range_min){
-	if(input_val > range_max) return range_max;
-	else if(input_val < range_min) return range_min;
-	else return input_val;
-}
 
-float get_Kp(Motor* mtr){ return mtr->Kp; }
 
-float get_Kd(Motor* mtr){ return mtr->Kd; }
-
-float get_Ki(Motor* mtr){ return mtr->Ki; }
-
-uint16_t get_angular_position(Motor* mtr) {return mtr->angular_position; }
-
-uint16_t get_angular_velocity(Motor* mtr) {return mtr->angular_velocity; }
-
-uint16_t get_desired_velocity(Motor* mtr) {return mtr->desired_velocity; }
-
-uint16_t get_current_pwm(Motor* mtr) {return mtr->current_pwm; }
-
-float get_error(Motor* mtr) {return mtr->error; }
 

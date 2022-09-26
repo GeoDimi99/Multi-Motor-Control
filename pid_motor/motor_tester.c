@@ -8,9 +8,9 @@
 #include "my_librarys/uart_int.h"
 
 //Parametri del controllore PID
-#define K_P 0.0f
+#define K_P .4f
 #define K_I 0.0f
-#define K_D 0.0f
+#define K_D .1f
 
 //Lunghezza buffer per le stringhe
 #define MAX_BUF 256
@@ -28,7 +28,7 @@ int main(void){
 	UART_init();
 	//- Inizializzazione motore ad anello chiuso
 	mtr = Motor_init(K_P, K_I, K_D);
-	set_type_controller(mtr, CLOSE_LOOP);
+	set_type_controller(mtr, CLOSE_LOOP); 
 	
 	//Variabili per il programma
 	uint8_t* in_str = (uint8_t*) malloc(MAX_BUF * sizeof(uint8_t));
@@ -43,20 +43,17 @@ int main(void){
 		//Controllo se c'è un input da leggere
 		if(UART_getString(in_str) > 1 ){
 			int vel = atoi(in_str);
-			int dir = vel > 0 ? RIGHT : LEFT ;
-			sprintf(out_str, "Read char: %s", in_str);
-			UART_putString(out_str);
-			UART_putChar('\n'); 
-			set_desired_velocity(mtr, abs(vel), dir);
-			UART_getString(in_str);
+			set_desired_velocity(mtr, vel);
+			
 		}
 		
 		//Stampa in ouput lo stato del motore
-		sprintf(out_str, "Current velocity: %d,Desidered velosity: %d, Current PWM: %d, P: %d, D: %d, I: %d", get_angular_velocity(mtr), get_desired_velocity(mtr), get_current_pwm(mtr), (int)mtr->u_p, (int)mtr->u_d, (int)mtr->integral_error);
+		//sprintf(out_str, "C_Pos: %d, C_vel: %d, D_vel: %d, C_PWM: %d, C_er: %d", mtr->angular_position, mtr->angular_velocity , (int)mtr->desired_velocity , mtr->current_pwm, (int) mtr->error);
+		sprintf(out_str, "%d,%d,%d,%d", mtr->angular_position, mtr->angular_velocity , (int)mtr->desired_velocity,(int)mtr->error + mtr->angular_velocity);
 		UART_putString(out_str);
 		UART_putChar('\n');
 		
-		_delay_ms(1);
+		_delay_ms(10);
 		
 	}
 	return 0;

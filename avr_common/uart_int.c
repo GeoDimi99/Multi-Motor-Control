@@ -40,8 +40,8 @@ uint8_t UART_getChar(void){
 	uint8_t tmptail;
 	
 	//Return se non c'è dati avviabili
-	//if(rxHead == rxTail) return 0;
-	while (rxHead == rxTail);
+	if(rxHead == rxTail) return 0;
+	//while (rxHead == rxTail);
 	
 	// Calcolo lunghezza dati
 	tmptail = ((rxTail + 1) & UART_BUFFER_MASK);
@@ -99,6 +99,8 @@ uint8_t UART_getString(uint8_t* buf){
   }
 }
 
+
+
 //Scrive una stringa
 void UART_putString(uint8_t* buf){
   while(*buf){
@@ -122,12 +124,11 @@ ISR(USART0_RX_vect){
 
 		// disable rx interrput
 		UCSR0B &= ~(1<<RXCIE0);
-		return;
+		
 	} else {
 
 		// save new index
 		rxHead = tmphead;
-
 		// save data in buffer
 		rxBuffer[tmphead] = data;
 	}
@@ -148,6 +149,7 @@ ISR(USART0_UDRE_vect){
 
 		// disable UDR if no data availbale
 		UCSR0B &= ~(1<<UDRIE0);
+		
 	}
 }
 

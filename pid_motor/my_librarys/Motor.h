@@ -12,28 +12,32 @@
 
 typedef enum {OPEN_LOOP, CLOSE_LOOP} ctrtype_t;
 
-typedef enum {RIGHT, LEFT} dir_t;
+
 
 typedef struct{
+	
+	uint8_t dira, dirb;
+	
 	// Variabili di stato
-	uint16_t angular_position;
-	uint16_t angular_velocity;
-	uint16_t desired_velocity;
-	uint8_t current_pwm;
-	float error;
-	dir_t direction;
-	float integral_error;
+	int16_t angular_position;
+	int16_t angular_velocity;
+	int16_t desired_velocity;
+	int16_t current_pwm;
+	
+	
 	
 	// Variabili di controllo
-	float Kp;
-	float Ki;
-	float Kd;
-	float u_p;
-	float u_i;
-	float u_d;
+	float error;
+	float error_acc;
+
 	
 	// Variabile scelta tipo controllore
 	ctrtype_t type_controller;
+	float Kp;
+	float Ki;
+	float Kd;
+	float max_error;
+	float max_error_integral;
 	
 } Motor;
 
@@ -60,20 +64,10 @@ void set_type_controller(Motor* mtr, ctrtype_t type_controller);
 // - direction: che può assumere i valori:
 //			--- LEFT : gira a sinistra 
 //			--- RIGHT: gira a destra
-void set_desired_velocity(Motor* mtr, uint16_t desired_velocity, dir_t direction);
+void set_desired_velocity(Motor* mtr, uint16_t desired_velocity);
 
 
 // spin_once: funzione che esegue i vari calcoli di controllo e va inserita nell' ISR
 void spin_once(Motor* mtr);
 
 
-
-// Metodi comuni per poter leggere i campi del Motore
-float get_Kp(Motor* mtr);
-float get_Kd(Motor* mtr);
-float get_Ki(Motor* mtr);
-uint16_t get_angular_position(Motor* mtr);
-uint16_t get_angular_velocity(Motor* mtr);
-uint16_t get_desired_velocity(Motor* mtr);
-uint16_t get_current_pwm(Motor* mtr);
-float get_error(Motor* mtr);

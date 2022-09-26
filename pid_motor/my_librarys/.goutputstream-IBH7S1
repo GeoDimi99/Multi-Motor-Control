@@ -1,0 +1,154 @@
+
+#include "Motor.h"
+#include "my_librarys/uart_int.h"
+#include <string.h>
+
+char dbg_buf [255];
+
+
+// Definizione del comportamento del vettore dei interrupt, cosa deve fare l'ISR:
+
+
+
+// Definizione delle funzioni riguardanti il motore:
+
+Motor* Motor_init(float K_p, float K_i, float K_d){
+	
+	//Inizzializzazione di tools indispensabili per il motore
+	digit_init();		// Controllo della direzione del motore
+	pwm_init();			// Controllo generatore d'onda PWM
+	encoder_init();		// Lettura dello stato corrente
+	timer5_init(LOOP_TIMING);	// Controllo di eventi con intervalli di tempo regolari
+	
+	// Allocazione dell'oggetto Motor
+	Motor* mtr = (Motor*) malloc(sizeof(Motor));
+	
+	// Inizializzazione dei parametri del controllore PID
+	mtr->Kp = K_p;
+	mtr->Ki = K_i;
+	mtr->Kd = K_d;
+	mtr->max_error = 20.f;
+	mtr->max_error_integral = 50.f;
+
+	
+	// Inizializzazione dell'intensità a zero
+	mtr->u_d = 0;
+	mtr->u_i = 0;
+	mtr->u_p = 0;
+	mtr->current_pwm = 0;
+	mtr->angular_velocity = 0;
+	mtr->angular_position = 0;
+	mtr->desired_velocity = 0;
+	mtr->error = 0; 
+	mtr->error_integral = 0;
+	mtr->error_integral = 0;
+	
+	return mtr;
+	
+}
+
+
+void Motor_detach(Motor* mtr){
+	
+	//Rilascio lo spazio dedicato al motore; 
+	free(mtr);
+}
+
+
+
+void set_type_controller(Motor* mtr, ctrtype_t type_controller){
+	
+	//Setto il tipo di controller
+	mtr->type_controller = type_controller;
+}
+
+
+
+void set_desired_velocity(Motor* mtr, uint16_t desired_velocity){
+	
+	//Imposto la velocità desiderata
+	mtr->desired_velocity = desired_velocity;
+	
+}
+
+
+void spin_once(Motor* mtr){
+	uint16_t curr_pos = encoder_read();				// Lettura posizione corrente
+	uint16_t prev_pos = mtr->angular_position;		// Lettura posizione precedente
+	
+	 
+	float curr_vel = curr_pos - prev_pos;
+	float des_vel = mtr->desired_velocity;
+	
+	float curr_err = clamp(des_vel - curr_vel, mtr->max_error);		// Calcolo dell'errore
+	mtr->error_derivative = curr_err - mtr->error;								// Calcolo dell'errore derivato
+	mtr->error_integral += curr_err;															// Calcolo dell'errore integrato
+	mtr->error_integral = clamp(mtr->error_integral, mtr->max_error_integral);
+	mtr->error = curr_err;													// Setto l'errore corrente
+	
+	mtr->angular_position = curr_pos;				// Setto posizione attuale
+	mtr->angular_velocity = curr_vel; 				// Setto velocita attuale
+	
+	
+	uint8_t dir_pin = 0;
+	
+	
+	switch(mtr->type_controller){
+		case OPEN_LOOP:
+			// Caso : Controllore ad anello aperto
+			
+			//Settiamo la direzione
+			dir_pin = (mtr->direction) ? (1 << 4) : (1 << 5);
+			digit_write(dir_pin,1);		
+			//Settiamo l'intensità di velocita	
+			mtr->current_pwm = abs(des_vel);	 
+			pwm_set_intensity((int)clamp(mtr->current_pwm, 255));	
+			
+			//Imponiamo l'errore pari a zero 
+			mtr->error = 0;										
+			break;
+			
+		case CLOSE_LOOP:
+			// Caso : Controllore ad anello chiuso
+			
+			//Calcolo dell'ingresso u(t)
+			mtr->u_d = mtr->Kd * mtr->error_derivative; 		//Calcolo della componente derivativa
+			mtr->u_i = mtr->Ki * mtr->error_integral;				//Calcolo della componente integrativa
+			mtr->u_p = mtr->Kp * mtr->error;								//Calcolo della componente proporzionale
+			 
+			mtr->current_pwm = clamp(mtr->current_pwm + mtr->u_d + mtr->u_i + mtr->u_p, 255); //Settiamo l'intensità della pwm corrente 
+			pwm_set_intensity(abs((int)mtr->current_pwm));																			//Settiamo l'intensitàd di velocita
+			
+			//Settiamo la direzione						
+			mtr->direction = !(mtr->current_pwm > 0);
+			dir_pin =  mtr->direction ? (1 << 4) : (1 << 5);
+			digit_write(dir_pin,1);
+			 
+			 
+			break;
+	}
+	
+}
+
+float clamp(float input_val, float range_max){
+	if(input_val > range_max) 		  return  range_max;
+	else if(input_val < -range_max) return -range_max;
+	else 													  return input_val;
+}
+
+float get_Kp(Motor* mtr){ return mtr->Kp; }
+
+float get_Kd(Motor* mtr){ return mtr->Kd; }
+
+float get_Ki(Motor* mtr){ return mtr->Ki; }
+
+uint16_t get_angular_position(Motor* mtr) {return mtr->angular_position; }
+
+uint16_t get_angular_velocity(Motor* mtr) {return mtr->angular_velocity; }
+
+float get_desired_velocity(Motor* mtr) {return mtr->desired_velocity; }
+
+float get_current_pwm(Motor* mtr) {return mtr->current_pwm; }
+
+float get_error(Motor* mtr) {return mtr->error; }
+

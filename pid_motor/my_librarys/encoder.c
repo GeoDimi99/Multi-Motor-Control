@@ -1,29 +1,30 @@
 #include "encoder.h"
 
 
-#define PIN_MASK 0x0F     //Usiamo gli ultimi quattro bit della porta B (50-53)
+#define PIN_MASK 0x03     //Usiamo gli ultimi quattro bit della porta B (50-53)
 
 volatile uint8_t previous_pins;
 volatile uint8_t current_pins;
+
 volatile uint16_t position_status;
 
 
-uint8_t transition_table[] = {
+static const int8_t transition_table[] = {
 	 0,			//00->00
-	+1,			//00->01
+	 1,			//00->01
 	-1,			//00->10
 	 0,			//00->11
 	-1,			//01->00
 	 0,			//01->01
 	 0,			//01->10
-	+1,			//01->11
-	+1,			//10->00
+	 1,			//01->11
+	 1,			//10->00
 	 0,			//10->01
 	 0,			//10->10
 	-1,			//10->11
 	 0,			//11->00
 	-1,			//11->01
-	+1,			//11->10
+	 1,			//11->10
 	 0			//11->11
 	
 	
@@ -46,8 +47,10 @@ void encoder_init(void){
 							//- PCINT3 = pin 51 Arduino
 							// Vedere datasheet e foto pin Arduino per dettagli
 	
-	current_pins = PINB & PIN_MASK; //Lettura dei pin attuali
-	previous_pins = current_pins;	//Settaggio dei pin precedenti ai pin attuali
+	previous_pins = PIN_MASK;	//Settaggio dei pin precedenti ai pin attuali
+	current_pins = PIN_MASK; //Lettura dei pin attuali
+	
+	position_status = 0;
 	
 	sei();					//Abilitiamo le interrupt
 	
@@ -62,15 +65,20 @@ uint16_t encoder_read(void){
 
 ISR(PCINT0_vect){		
 	previous_pins = current_pins;  		//Imposto i pin precedenti i pin attuali ai pin precedenti
-	current_pins = PINB & PIN_MASK;		//Leggo i pin e gli imposto come attuali;
+	current_pins = PINB;		//Leggo i pin e gli imposto come attuali;
 	
 	//Generazione dell'indice della tabella
-	uint8_t TT_index = ((PIN_MASK & previous_pins) << 2) | (PIN_MASK & current_pins);
+	uint8_t TT_index = ( previous_pins & PIN_MASK ) << 2 | ( current_pins & PIN_MASK );
 	
 	//Incremento dello stato corrente del encoder
 	position_status += transition_table[TT_index];
 	
-	
-	
 }
+
+
+
+
+
+
+
 

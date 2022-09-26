@@ -2,7 +2,7 @@
 #1. Cancellazione dei vecchi file oggetto
 make clean
 #2. Creazione dell file motore
-make && make en_test.hex 
+make && make motor_tester.hex 
 
 
 

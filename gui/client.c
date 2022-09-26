@@ -1,6 +1,7 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include "serial_linux.h"
 
 /*ALBERO DEI CONTENITORI E DEGLI ELEMENTI: 
@@ -35,6 +36,7 @@
 #define bsize 20
 
 pthread_t thread;
+sem_t sem; 
 
 GtkWidget* window;
 
@@ -48,19 +50,18 @@ int fd;
 ////////////////////////////////////////////////////////
 
 gboolean append_char(gpointer user_data){
-	const char* buffer= (const char*)user_data; 
 	gtk_text_buffer_get_end_iter(text_buf, &iter); 
-	gtk_text_buffer_insert(text_buf, &iter, buffer, -1); 
+	gtk_text_buffer_insert(text_buf, &iter, buf, -1); 
+	sem_post(&sem);
 	return G_SOURCE_REMOVE; 
 }
 
 void* output(void * arg){ 
 	while (1) {
-		buf= (char*) malloc(sizeof(char)*bsize); 
-		int n_read=read(fd, buf, bsize-1);
+		int n_read=read(fd, buf, bsize-1); 
 		*(buf + n_read)= '\0';  
-		printf("%s", buf); 
-		g_idle_add(append_char, buf); 
+		g_idle_add(append_char, NULL); 
+		sem_wait(&sem); 
 	}
 }
 	
@@ -93,13 +94,6 @@ void open_serial(GtkWidget *widget, gpointer data){
 			return;
 		}
 		serial_set_blocking(fd, 1);
-		dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-				GTK_DIALOG_DESTROY_WITH_PARENT,
-				GTK_MESSAGE_OTHER,
-				GTK_BUTTONS_CLOSE,"Serial opened! ... \n");
-			gtk_window_set_title(GTK_WINDOW(dialog), "Success");
-			gtk_dialog_run(GTK_DIALOG(dialog));
-			gtk_widget_destroy(dialog);
 		
 		///// OUTPUT ///// --->occorre lanciarlo in un thread separato
 		if (pthread_create(&thread, NULL, output,NULL)){
@@ -158,6 +152,9 @@ void show_help(GtkWidget *widget, gpointer data) {
 }
 
 int main(int argc, char *argv[]) {
+	
+	sem_init(&sem, 0, 0); 
+	buf= (char*) malloc(sizeof(char)*bsize); 
 	
 	//window variabile globale
 	
@@ -344,6 +341,9 @@ int main(int argc, char *argv[]) {
 	//si chiama un ciclo principale che serve a controllare effettivamente il programma
 	//per gestire gli eventi 
 	gtk_main();
+	
+	sem_destroy(&sem); 
+	free(buf); 
 
 	return 0;
 }

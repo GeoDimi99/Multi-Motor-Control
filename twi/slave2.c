@@ -43,9 +43,6 @@ int main(void){
 		
 		TWI_Slave_Transmit_Data(current_velocity, velocity_len); //invio velocità
 		
-		UART_putString("current_velocity: ");
-		UART_putString(current_velocity);
-		UART_putString("\n");
 	}
 	return 0;
 }

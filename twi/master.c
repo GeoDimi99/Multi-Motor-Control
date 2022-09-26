@@ -40,11 +40,9 @@ int main(void){
 		UART_putString(current_velocity_2);              //mando in output la velocità corrente del motore 2
 		UART_putString("\n");
 		
-		UART_putString("Inserire la velocita desiderata per il motore 1...\n");
 		UART_getString(desired_velocity_1);
 		if (*desired_velocity_1 == 0) strcpy(desired_velocity_1, current_velocity_1); 
 		
-		UART_putString("Inserire la velocita desiderata per il motore 2...\n");
 		UART_getString(desired_velocity_2);
 		if (*desired_velocity_2 == 0) strcpy(desired_velocity_2, current_velocity_2); 
 		
@@ -99,6 +97,8 @@ int main(void){
 		TWI_Read_Data(0x02, velocity_len, 0);          //leggo la velocità corrente del primo slave
 		 
 		strcpy(current_velocity_2, Receive_Buffer);      //salvo la velocità corrente
+		
+		UART_putString("\n"); 
 		
 	}
 	

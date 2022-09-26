@@ -157,6 +157,7 @@ int main(int argc, char *argv[]) {
 	// IN Left box:
 	GtkWidget* logo;
 	GtkWidget* label_output;
+	GtkWidget* scroll_box; 
 	GtkWidget* textArea;
 	text_buf = gtk_text_buffer_new(NULL);
 	GtkWidget *serial_box;
@@ -275,10 +276,14 @@ int main(int argc, char *argv[]) {
 	gtk_container_add(GTK_CONTAINER(left_box), logo);
 	label_output= gtk_label_new ("Motor velocity,  Motor position:");
 	gtk_container_add(GTK_CONTAINER(left_box), label_output);
+	scroll_box= gtk_scrolled_window_new(NULL, NULL); 
+	gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll_box), 600); 
+	gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll_box), 500); 
 	textArea = gtk_text_view_new_with_buffer(text_buf);
     gtk_widget_set_size_request(textArea, 600, 500);
     gtk_text_view_set_editable(GTK_TEXT_VIEW(textArea), 0);
-	gtk_container_add(GTK_CONTAINER(left_box), textArea);
+	gtk_container_add(GTK_CONTAINER(scroll_box), textArea);
+	gtk_container_add(GTK_CONTAINER(left_box), scroll_box);
 	
 	const char* data[2]; 
 	

@@ -13,8 +13,7 @@ void UART_init(void){
   UBRR0L = (uint8_t)MYUBRR;
   
   //Abilitiamo RX e TX con interrupt
-  UCSR0B |= (1 << RXEN0) | (1 << TXEN0);
-  UCSR0B |= (1 << RXCIE0)| (1 << TXCIE0);
+  UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0); 
 
   //8-bit data
   UCSR0C = (1<<UCSZ01) | (1<<UCSZ00); 
@@ -99,8 +98,6 @@ uint8_t UART_getString(uint8_t* buf){
   }
 }
 
-
-
 //Scrive una stringa
 void UART_putString(uint8_t* buf){
   while(*buf){
@@ -124,11 +121,12 @@ ISR(USART0_RX_vect){
 
 		// disable rx interrput
 		UCSR0B &= ~(1<<RXCIE0);
-		
+		return;
 	} else {
 
 		// save new index
 		rxHead = tmphead;
+
 		// save data in buffer
 		rxBuffer[tmphead] = data;
 	}
@@ -149,7 +147,6 @@ ISR(USART0_UDRE_vect){
 
 		// disable UDR if no data availbale
 		UCSR0B &= ~(1<<UDRIE0);
-		
 	}
 }
 

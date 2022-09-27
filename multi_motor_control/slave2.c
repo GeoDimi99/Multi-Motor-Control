@@ -44,8 +44,8 @@ int main(void){
 		TWI_Slave_Receive_Data();         //ricevo comando "apply"
 		
 		// Conversione e setta velocita
-		int vel = atoi(desired_velocity);
-		set_desired_velocity(mtr, vel);
+		//int vel = atoi(desired_velocity);
+		//set_desired_velocity(mtr, vel);
 		
 		//Lettura stato motore
 		sprintf(current_state, "%d,%d,%d", mtr->angular_position, mtr->angular_velocity , mtr->desired_velocity);

@@ -4,7 +4,7 @@
 #include "util/delay.h"
 #include <stdio.h>
 #include "util/atomic.h"
-#include "../avr_common/uart.h"
+
 
 void TWI_Init(){
 	TWI_info.mode = Ready;

@@ -5,8 +5,8 @@
 #define TWI_STATUS	(TWSR & 0xF8) //prende dal 3° al 7° bit dello stato
 
 //buffer globali di trasmissione e ricezione
-#define TRANSMIT_BUFLEN 20
-#define RECEIVE_BUFLEN 20
+#define TRANSMIT_BUFLEN 30
+#define RECEIVE_BUFLEN 30
 uint8_t Transmit_Buffer[TRANSMIT_BUFLEN];
 volatile uint8_t Receive_Buffer[RECEIVE_BUFLEN];     //volatile-->può cambiare ad ogni istante
 volatile int TB_Index;                               //indicizza il buffer di trasmissione--> può cambiare ad ogni istante

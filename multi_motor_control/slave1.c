@@ -25,6 +25,7 @@ Motor* mtr;
  
 int main(void){ 
 	//Settiamo lo slave
+	UART_init();
 	mtr = Motor_init(K_P, K_I, K_D);
 	set_type_controller(mtr, CLOSE_LOOP);
 	Slave_Addr_init(0x01, 1);                    //inizializza TWI
@@ -51,10 +52,9 @@ int main(void){
 		sprintf(current_state, "P:%d, CV:%d, DV:%d", mtr->angular_position, mtr->angular_velocity , mtr->desired_velocity);
 		
 		//Campiona e invia stato
-		TWI_Slave_Receive_Data();    //ricevo comando "sample"
+		TWI_Slave_Receive_Data();    //ricevo comando "sample" 
 		TWI_Slave_Receive_Data();   //ricevo comando "get"
-		TWI_Slave_Transmit_Data(current_state, VELOCITY_LEN); //invio velocità
-		
+		TWI_Slave_Transmit_Data(current_state, VELOCITY_LEN); //invio velocità 
 	}
 	return 0;
 }

@@ -14,6 +14,7 @@ GtkWidget* window;
 GtkWidget* open_button; 
 
 //variabili globali necessarie per realizzare l'output
+GtkWidget* textArea;
 GtkTextBuffer* text_buf; 
 GtkTextIter iter; 
 char* buf; 
@@ -27,7 +28,8 @@ GtkEntryBuffer* buf_input2;
 
 gboolean append_text(gpointer user_data){                    //inserisce del testo in coda alla text area
 	gtk_text_buffer_get_end_iter(text_buf, &iter); 
-	gtk_text_buffer_insert(text_buf, &iter, buf, -1); 
+	gtk_text_buffer_insert(text_buf, &iter, buf, -1);
+	gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(textArea),&iter,0,FALSE,1.0,0);
 	sem_post(&sem);
 	return G_SOURCE_REMOVE; 
 }
@@ -46,6 +48,17 @@ void input(GtkWidget *widget, gpointer data){                     //gestore del 
 	int len_2= gtk_entry_buffer_get_length(buf_input2); 
 	const char* vel_1= gtk_entry_buffer_get_text(buf_input1);
 	const char* vel_2= gtk_entry_buffer_get_text(buf_input2);
+	int v1 = atoi(vel_1);
+	int v2 = atoi(vel_2);
+	if(v1 < -380 || v1 > 380 || v2 < -380 || v2 > 380 ){
+		GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window),
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+				GTK_MESSAGE_ERROR,
+				GTK_BUTTONS_CLOSE, "Error: input must be between [-380,380]!\n");
+				gtk_dialog_run(GTK_DIALOG(dialog));
+				gtk_widget_destroy(dialog);
+				return;
+	}
 	write(fd, vel_1, len_1+1);                                     //non sono sicura di questo
 	write(fd, vel_2, len_2+1);                                     //non sono sicura di questo 
 }
@@ -129,7 +142,7 @@ void show_help(GtkWidget *widget, gpointer data) {
 	GtkWidget *dialog = gtk_about_dialog_new();
 	gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG(dialog), "AVR Multi Motor Control");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
-	"USE INSTRUCTIONS: \n \n  -Open a connection with your AVR device by setting it's path and it's baudrate \n \n- Set the desired speed for your motors and click on the 'Set' button \n \n Warning!: the speed range must fall into [-300, +300]. Attempts to set the speed out of range will be ignored.");
+	"USE INSTRUCTIONS: \n \n  -Open a connection with your AVR device by setting it's path and it's baudrate \n \n- Set the desired speed for your motors and click on the 'Set' button \n \n Warning!: the speed range must fall into [-380, +380]. Attempts to set the speed out of range will be ignored.");
 	gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
 	g_object_unref(pixbuf), pixbuf = NULL;
 	gtk_dialog_run(GTK_DIALOG (dialog));
@@ -158,7 +171,7 @@ int main(int argc, char *argv[]) {
 	GtkWidget* logo;
 	GtkWidget* label_output;
 	GtkWidget* scroll_box; 
-	GtkWidget* textArea;
+	// Globale GtkWidget* textArea;
 	text_buf = gtk_text_buffer_new(NULL);
 	GtkWidget *serial_box;
 	
@@ -321,7 +334,7 @@ int main(int argc, char *argv[]) {
 	set_button=gtk_button_new_with_label("Set");
 	gtk_container_add (GTK_CONTAINER(set_box), set_button);
 	g_signal_connect (set_button, "clicked", G_CALLBACK(input), NULL);
-	label_constraint= gtk_label_new ("Speed range: [-300, +300]");
+	label_constraint= gtk_label_new ("Speed range: [-380, +380]");
 	gtk_container_add(GTK_CONTAINER(right_box), label_constraint);
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////

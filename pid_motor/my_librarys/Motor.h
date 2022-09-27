@@ -60,10 +60,7 @@ void set_type_controller(Motor* mtr, ctrtype_t type_controller);
 // set_desired_velocity: setta la velocità desiderata e la direzione in particolare assume i parametri:
 // - desired_velocity : che può assumere diversi valori in base alla alla modalità del controllore:
 // 			--- OPEN_LOOP : si regola l'intensità da 0 a 255;
-//		 	--- CLOSE_LOOP: si regola la velocità da 0 a 300;
-// - direction: che può assumere i valori:
-//			--- LEFT : gira a sinistra 
-//			--- RIGHT: gira a destra
+//		 	--- CLOSE_LOOP: si regola la velocità da 0 a 390;
 void set_desired_velocity(Motor* mtr, uint16_t desired_velocity);
 
 

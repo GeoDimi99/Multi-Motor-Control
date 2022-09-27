@@ -40,11 +40,7 @@ int main(void){
 		UART_putString(current_state_2);              //mando in output la velocità corrente del motore 2
 		UART_putString("\n");
 		
-		UART_getString(desired_velocity_1);
-		if (*desired_velocity_1 == 0) strcpy(desired_velocity_1, current_state_1); 
-		
-		UART_getString(desired_velocity_2);
-		if (*desired_velocity_2 == 0) strcpy(desired_velocity_2, current_state_2); 
+		if(UART_getString(desired_velocity_1) > 1 && UART_getString(desired_velocity_2)>1){
 		
 		///// COMUNICAZIONE CON IL PRIMO SLAVE /////
 		
@@ -60,7 +56,7 @@ int main(void){
 		
 		///// COMUNICAZIONE CON IL SECONDO SLAVE /////
 		
-		/*set[0]= (0x02 << 1) | 0x00;                    
+		set[0]= (0x02 << 1) | 0x00;                    
 				              
 		TWI_Transmit_Data(set, 5, 0);                    //invio il comando "set" al secondo slave
 		
@@ -68,11 +64,13 @@ int main(void){
 		
 		strcpy(send_velocity + 1, desired_velocity_2);       //inserisco la velocità desiderata dentro al buffer da inviare (indirizzo + velocità desiderata)
 		
-		TWI_Transmit_Data(send_velocity, VELOCITY_LEN+1, 0);  //invio la velocità desiderata  al secondo slave*/
+		TWI_Transmit_Data(send_velocity, VELOCITY_LEN+1, 0);  //invio la velocità desiderata  al secondo slave
 		
 		///// COMANDO APPLY IN BROADCAST /////
 	
 		TWI_Transmit_Data(apply, 7, 0);                   //invio il comando "apply" 
+		
+		}
 		
 		//// COMANDO SAMPLE IN BROADCAST /////
 		
@@ -90,15 +88,17 @@ int main(void){
 		
 		///// CONTROLLO VELOCITÀ SECONDO MOTORE /////
 		
-		/*get[0]= (0x02 << 1) | 0x00;              
+		get[0]= (0x02 << 1) | 0x00;              
 		                
 		TWI_Transmit_Data(get, 5, 0);               //invio comando "get" al primo slave
 		
 		TWI_Read_Data(0x02, VELOCITY_LEN, 0);          //leggo la velocità corrente del primo slave
 		 
-		strcpy(current_state_2, Receive_Buffer);      //salvo la velocità corrente*/
+		strcpy(current_state_2, Receive_Buffer);      //salvo la velocità corrente
 		
 		UART_putString("\n"); 
+		
+		_delay_ms(1000);
 		
 		
 	}

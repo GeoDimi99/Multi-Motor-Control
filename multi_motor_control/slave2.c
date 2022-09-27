@@ -31,30 +31,32 @@ int main(void){
 	sei();                                       //abilita le interruzioni globali
 	
 	
-	uint8_t current_state[VELOCITY_LEN]= "0,0,0";
+	uint8_t current_state[VELOCITY_LEN]= "P:0, CV:0, DV:0";
 	uint8_t desired_velocity[VELOCITY_LEN]= "0";
 
 	while(1){
 		//Ricevi velocita
-		TWI_Slave_Receive_Data();     			//ricevo comando "set"
-		TWI_Slave_Receive_Data();          //ricevo desired velocity 
-		if (*Receive_Buffer != 0) strcpy(desired_velocity, Receive_Buffer);   //inscerisco in desired velocity
-		 
-		//Applica velocita (se letta bene)
-		TWI_Slave_Receive_Data();         //ricevo comando "apply"
+		TWI_Slave_Receive_Data();     			//ricevo un comando 
 		
-		// Conversione e setta velocita
-		//int vel = atoi(desired_velocity);
-		//set_desired_velocity(mtr, vel);
-		
-		//Lettura stato motore
-		sprintf(current_state, "%d,%d,%d", mtr->angular_position, mtr->angular_velocity , mtr->desired_velocity);
-		
-		//Campiona e invia stato
-		TWI_Slave_Receive_Data();    //ricevo comando "sample"
-		TWI_Slave_Receive_Data();   //ricevo comando "get"
-		TWI_Slave_Transmit_Data(current_state, VELOCITY_LEN); //invio velocità
-		
+		if (!strcmp(Receive_Buffer, SET_command)){
+			TWI_Slave_Receive_Data();          //ricevo desired velocity 
+			if (*Receive_Buffer != 0) strcpy(desired_velocity, Receive_Buffer);   //inscerisco in desired velocity
+		}
+		else if(!strcmp(Receive_Buffer, APPLY_command)){
+			// Conversione e setta velocita
+			int vel = atoi(desired_velocity);
+			set_desired_velocity(mtr, vel);
+		}
+		else if(!strcmp(Receive_Buffer, SAMPLE_command)){
+			//Lettura stato motore
+			sprintf(current_state, "P:%d, CV:%d, DV:%d", mtr->angular_position, mtr->angular_velocity , mtr->desired_velocity);
+		}
+		else if (!strcmp(Receive_Buffer, GET_command)){
+			TWI_Slave_Transmit_Data(current_state, VELOCITY_LEN); //invio velocità 
+		}
+		else{
+			UART_putString("Non ho ricevuto un comando valido\n"); 
+		}
 	}
 	return 0;
 }

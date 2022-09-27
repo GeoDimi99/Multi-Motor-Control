@@ -6,8 +6,7 @@
 #include <string.h>
 #include <avr/interrupt.h>
 #include <string.h>
-#include "../avr_common/uart_int.h"
-#include "../pid_motor/my_librarys/Motor.h"
+#include "../avr_common/motor_librarys/Motor.h"
 
 #define SAMPLE_command "sample"
 #define GET_command "get"

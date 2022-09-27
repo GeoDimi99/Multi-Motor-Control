@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include <string.h>
-#include "../avr_common/uart_int.h"
+#include "../avr_common/uart/uart_int.h"
 
 
 #define VELOCITY_LEN 25

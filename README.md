@@ -18,9 +18,8 @@ The system is designed to control multiple DC motors simultaneously using a dist
 
 ## Repository Structure
 
-- **/src**: Contains the source code for the AVR microcontrollers, including the PID controller and I2C communication protocol.
-- **/docs**: Documentation, including the thesis and project reports.
-- **/schematics**: Circuit diagrams and schematics for the hardware setup.
+- **/multi_motor_control** and **/avr_common**: Contains the source code for the AVR microcontrollers, including the PID controller and I2C communication protocol.
+- **/docs**: Documentation, including the thesis and project reports, circuit diagrams and schematics for the hardware setup.
 - **/gui**: Source code for the GTK-based graphical user interface.
 
 ## Circuit Schematic
@@ -34,8 +33,6 @@ Below is the schematic diagram of the multi-motor control system:
 The GTK-based interface allows users to control the motors and monitor their status in real-time. Below is a screenshot of the interface:
 
 <img title="" src="screenshot/screenshot2.jpg" alt="GUI Screenshot" width="555" data-align="center">
-
-# 
 
 ## Prerequisites
 
